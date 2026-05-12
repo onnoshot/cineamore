@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FaceUploader } from "@/components/upload/face-uploader";
@@ -11,6 +11,12 @@ import { hapticMedium, hapticError } from "@/lib/utils/haptic";
 export default function CreatePage() {
   const router = useRouter();
   const { setRefs, setJobId, setPhase, reset } = useGenerationStore();
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("cineamore_user")) {
+      router.replace("/register");
+    }
+  }, [router]);
 
   const [manBlob, setManBlob] = useState<Blob | null>(null);
   const [womanBlob, setWomanBlob] = useState<Blob | null>(null);

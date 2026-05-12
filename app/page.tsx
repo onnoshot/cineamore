@@ -49,7 +49,8 @@ export default function LandingPage() {
 
   const handleStart = () => {
     hapticMedium();
-    router.push("/create");
+    const registered = typeof window !== "undefined" && localStorage.getItem("cineamore_user");
+    router.push(registered ? "/create" : "/register");
   };
 
   const isLast = current === 2;
