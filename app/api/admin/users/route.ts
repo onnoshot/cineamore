@@ -32,10 +32,22 @@ export async function GET(req: NextRequest) {
   try {
     const supabase = getAdmin();
 
-    const { data: users, error } = await supabase
-      .from("registrations")
-      .select("id, full_name, email, city, birth_year, created_at, is_vip, credits, videos_created")
-      .order("created_at", { ascending: false });
+    // Fetch from both tables and merge (profiles = new auth users, registrations = legacy)
+    const [{ data: profileUsers }, { data: regUsers }] = await Promise.all([
+      supabase.from("profiles").select("id, full_name, email, city, birth_year, created_at, is_vip, credits, videos_created").order("created_at", { ascending: false }),
+      supabase.from("registrations").select("id, full_name, email, city, birth_year, created_at, is_vip, credits, videos_created").order("created_at", { ascending: false }),
+    ]);
+
+    // Merge, deduplicate by email
+    const emailsSeen = new Set<string>();
+    const allUsers = [...(profileUsers ?? []), ...(regUsers ?? [])].filter((u) => {
+      if (!u.email || emailsSeen.has(u.email)) return false;
+      emailsSeen.add(u.email);
+      return true;
+    });
+
+    const users = allUsers.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const error = null;
 
     if (error) throw error;
 

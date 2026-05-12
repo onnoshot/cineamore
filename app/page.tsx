@@ -229,96 +229,238 @@ const slideVariants = {
 function SlideOneIllustration() {
   return (
     <div className="relative flex items-center justify-center w-full h-full">
-      {/* Connection line */}
-      <motion.div
-        className="absolute"
-        style={{ width: 80, height: 2, background: "linear-gradient(90deg, rgba(255,55,95,0.6), rgba(191,90,242,0.6))" }}
-        initial={{ scaleX: 0, opacity: 0 }}
-        animate={{ scaleX: 1, opacity: 1 }}
-        transition={{ delay: 0.5, duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
-      />
+      {/* Ambient glows */}
+      <motion.div className="absolute pointer-events-none"
+        style={{ left: "12%", top: "38%", width: 100, height: 100, borderRadius: "50%", background: "rgba(255,55,95,0.2)", filter: "blur(28px)" }}
+        animate={{ opacity: [0.5, 1, 0.5], scale: [1, 1.15, 1] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
+      <motion.div className="absolute pointer-events-none"
+        style={{ right: "12%", top: "38%", width: 100, height: 100, borderRadius: "50%", background: "rgba(191,90,242,0.2)", filter: "blur(28px)" }}
+        animate={{ opacity: [0.5, 1, 0.5], scale: [1, 1.15, 1] }}
+        transition={{ duration: 3, delay: 0.6, repeat: Infinity, ease: "easeInOut" }} />
 
-      {/* Heart in center */}
+      {/* Connection arc SVG */}
+      <svg className="absolute" style={{ width: "100%", height: "100%", top: 0, left: 0, pointerEvents: "none" }} viewBox="0 0 320 220">
+        <defs>
+          <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#FF375F" stopOpacity="0.5" />
+            <stop offset="50%" stopColor="#FF375F" stopOpacity="0" />
+            <stop offset="100%" stopColor="#BF5AF2" stopOpacity="0.5" />
+          </linearGradient>
+        </defs>
+        <motion.path
+          d="M 82 110 Q 160 60 238 110"
+          fill="none" stroke="url(#arcGrad)" strokeWidth="1.5" strokeDasharray="4 4"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: 1 }}
+          transition={{ delay: 0.6, duration: 1.0, ease: "easeOut" }}
+        />
+      </svg>
+
+      {/* Male portrait card */}
       <motion.div
-        className="absolute z-10 text-2xl"
+        initial={{ x: -28, opacity: 0, rotate: -7 }}
+        animate={{ x: 0, opacity: 1, rotate: -7 }}
+        transition={{ delay: 0.15, duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+        style={{ position: "absolute", left: "6%", transformOrigin: "bottom center" }}
+      >
+        <PortraitCard gender="male" color="#FF375F" label="SEN" />
+      </motion.div>
+
+      {/* Female portrait card */}
+      <motion.div
+        initial={{ x: 28, opacity: 0, rotate: 7 }}
+        animate={{ x: 0, opacity: 1, rotate: 7 }}
+        transition={{ delay: 0.3, duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+        style={{ position: "absolute", right: "6%", transformOrigin: "bottom center" }}
+      >
+        <PortraitCard gender="female" color="#BF5AF2" label="O" />
+      </motion.div>
+
+      {/* Center heart */}
+      <motion.div
+        className="relative z-10 flex items-center justify-center"
         initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: [0, 1.2, 1], opacity: 1 }}
-        transition={{ delay: 0.8, duration: 0.5 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.75, type: "spring", stiffness: 260, damping: 18 }}
       >
-        <motion.span
-          animate={{ scale: [1, 1.15, 1] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        {/* Outer pulse ring */}
+        <motion.div className="absolute rounded-full"
+          style={{ width: 56, height: 56, border: "1px solid rgba(255,55,95,0.3)" }}
+          animate={{ scale: [1, 1.6, 1], opacity: [0.6, 0, 0.6] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }} />
+        <motion.div className="absolute rounded-full"
+          style={{ width: 56, height: 56, border: "1px solid rgba(191,90,242,0.25)" }}
+          animate={{ scale: [1, 2, 1], opacity: [0.4, 0, 0.4] }}
+          transition={{ duration: 2.2, delay: 0.4, repeat: Infinity, ease: "easeOut" }} />
+        {/* Heart SVG */}
+        <motion.div
+          animate={{ scale: [1, 1.12, 1] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
         >
-          🤍
-        </motion.span>
+          <HeartSVG />
+        </motion.div>
       </motion.div>
 
-      {/* Left avatar */}
-      <motion.div
-        className="absolute"
-        style={{ left: "18%" }}
-        initial={{ x: -20, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-      >
-        <AvatarCircle color="#FF375F" label="Sen" emoji="🧑" delay={0.2} />
-      </motion.div>
+      {/* Floating sparkles */}
+      {[
+        { x: "30%", y: "18%", delay: 1.0, color: "#FF375F" },
+        { x: "68%", y: "22%", delay: 1.3, color: "#BF5AF2" },
+        { x: "22%", y: "72%", delay: 1.6, color: "#FF9F0A" },
+        { x: "76%", y: "68%", delay: 1.9, color: "#BF5AF2" },
+      ].map((s, i) => (
+        <motion.div key={i}
+          className="absolute pointer-events-none"
+          style={{ left: s.x, top: s.y }}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: [0, 1, 0], scale: [0, 1, 0], y: [0, -14, -28] }}
+          transition={{ delay: s.delay, duration: 1.4, repeat: Infinity, repeatDelay: 2.5 + i * 0.4 }}
+        >
+          <SparkSVG color={s.color} />
+        </motion.div>
+      ))}
+    </div>
+  );
+}
 
-      {/* Right avatar */}
+function PortraitCard({ gender, color, label }: { gender: "male" | "female"; color: string; label: string }) {
+  return (
+    <div className="relative flex flex-col items-center" style={{ width: 108, height: 148 }}>
+      {/* Card body */}
+      <div className="w-full h-full rounded-[22px] flex flex-col items-center justify-between py-3"
+        style={{
+          background: `linear-gradient(160deg, ${color}18 0%, ${color}06 100%)`,
+          border: `1.5px solid ${color}45`,
+          boxShadow: `0 8px 28px ${color}20, inset 0 1px 0 ${color}22`,
+        }}>
+
+        {/* Film perforations top */}
+        <div className="flex gap-1.5 px-2">
+          {[0,1,2,3].map(i => (
+            <div key={i} style={{ width: 5, height: 4, borderRadius: 1.5, background: `${color}30`, border: `1px solid ${color}40` }} />
+          ))}
+        </div>
+
+        {/* Portrait SVG */}
+        <div className="flex-1 flex items-center justify-center w-full px-2">
+          {gender === "male" ? <MalePortraitSVG color={color} /> : <FemalePortraitSVG color={color} />}
+        </div>
+
+        {/* Film perforations bottom */}
+        <div className="flex gap-1.5 px-2">
+          {[0,1,2,3].map(i => (
+            <div key={i} style={{ width: 5, height: 4, borderRadius: 1.5, background: `${color}30`, border: `1px solid ${color}40` }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Label */}
+      <div className="mt-2 text-[11px] font-bold tracking-[0.12em]" style={{ color: `${color}cc` }}>{label}</div>
+
+      {/* Upload badge */}
       <motion.div
-        className="absolute"
-        style={{ right: "18%" }}
-        initial={{ x: 20, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+        className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center"
+        style={{ background: color, boxShadow: `0 3px 10px ${color}60` }}
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ delay: 0.6 + (gender === "female" ? 0.2 : 0), type: "spring", stiffness: 280 }}
       >
-        <AvatarCircle color="#BF5AF2" label="O" emoji="👩" delay={0.35} />
+        <svg width="12" height="12" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+        </svg>
       </motion.div>
     </div>
   );
 }
 
-function AvatarCircle({ color, label, emoji, delay }: { color: string; label: string; emoji: string; delay: number }) {
+function MalePortraitSVG({ color }: { color: string }) {
   return (
-    <div className="flex flex-col items-center gap-3">
-      <motion.div
-        className="relative rounded-full flex items-center justify-center"
-        style={{
-          width: 96,
-          height: 96,
-          background: `radial-gradient(circle, ${color}22 0%, transparent 70%)`,
-          border: `2px solid ${color}55`,
-        }}
-        animate={{
-          boxShadow: [
-            `0 0 20px ${color}30`,
-            `0 0 40px ${color}55`,
-            `0 0 20px ${color}30`,
-          ],
-        }}
-        transition={{ duration: 2.5, delay, repeat: Infinity, ease: "easeInOut" }}
-      >
-        {/* Rotating ring */}
-        <motion.div
-          className="absolute inset-0 rounded-full"
-          style={{ border: `1.5px dashed ${color}40` }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-        />
-        <span className="text-4xl">{emoji}</span>
-        {/* Upload indicator */}
-        <motion.div
-          className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center text-xs"
-          style={{ background: color, boxShadow: `0 2px 8px ${color}66` }}
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: delay + 0.4, type: "spring", stiffness: 300 }}
-        >
-          +
-        </motion.div>
-      </motion.div>
-      <span className="text-sm font-medium text-white/50">{label}</span>
-    </div>
+    <svg viewBox="0 0 64 80" fill="none" style={{ width: "80%", maxWidth: 72 }}>
+      {/* Short hair */}
+      <path d="M16 34 Q16 14 32 12 Q48 14 48 34" fill={`${color}28`} stroke={color} strokeWidth="1.3" strokeLinejoin="round"/>
+      {/* Head */}
+      <ellipse cx="32" cy="36" rx="16" ry="19" fill={`${color}10`} stroke={color} strokeWidth="1.3"/>
+      {/* Eyes */}
+      <circle cx="26" cy="32" r="2.2" fill={color} opacity="0.75"/>
+      <circle cx="38" cy="32" r="2.2" fill={color} opacity="0.75"/>
+      {/* Eyebrows (masculine, straight) */}
+      <path d="M23 27.5 L29 27.5" stroke={color} strokeWidth="1.5" strokeLinecap="round" opacity="0.6"/>
+      <path d="M35 27.5 L41 27.5" stroke={color} strokeWidth="1.5" strokeLinecap="round" opacity="0.6"/>
+      {/* Nose */}
+      <path d="M30.5 35 L32 38.5 L33.5 35" stroke={color} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" opacity="0.5"/>
+      {/* Smile */}
+      <path d="M27 43 Q32 47 37 43" stroke={color} strokeWidth="1.4" strokeLinecap="round"/>
+      {/* Neck */}
+      <path d="M27 55 L27 62 L37 62 L37 55" fill={`${color}10`} stroke={color} strokeWidth="1.1"/>
+      {/* Jacket / shoulders */}
+      <path d="M2 80 Q4 62 18 57 L27 62 L37 62 L46 57 Q60 62 62 80" fill={`${color}12`} stroke={color} strokeWidth="1.3" strokeLinejoin="round"/>
+      {/* Tie */}
+      <path d="M29.5 62 L28 70 L32 75 L36 70 L34.5 62" fill={`${color}22`} stroke={color} strokeWidth="0.9"/>
+    </svg>
+  );
+}
+
+function FemalePortraitSVG({ color }: { color: string }) {
+  return (
+    <svg viewBox="0 0 64 80" fill="none" style={{ width: "80%", maxWidth: 72 }}>
+      {/* Long hair (left side) */}
+      <path d="M16 32 Q12 50 14 70 Q17 74 20 68" fill={`${color}22`} stroke={color} strokeWidth="1.3" strokeLinecap="round"/>
+      {/* Long hair (right side) */}
+      <path d="M48 32 Q52 50 50 70 Q47 74 44 68" fill={`${color}22`} stroke={color} strokeWidth="1.3" strokeLinecap="round"/>
+      {/* Hair top */}
+      <path d="M16 32 Q15 12 32 10 Q49 12 48 32" fill={`${color}28`} stroke={color} strokeWidth="1.3" strokeLinejoin="round"/>
+      {/* Head */}
+      <ellipse cx="32" cy="34" rx="15" ry="18" fill={`${color}10`} stroke={color} strokeWidth="1.3"/>
+      {/* Eyes */}
+      <circle cx="26" cy="30" r="2.3" fill={color} opacity="0.75"/>
+      <circle cx="38" cy="30" r="2.3" fill={color} opacity="0.75"/>
+      {/* Lashes (feminine) */}
+      <path d="M23.5 27 Q25 25 26.5 26.5" stroke={color} strokeWidth="1" strokeLinecap="round" opacity="0.55"/>
+      <path d="M35.5 27 Q37 25 38.5 26.5" stroke={color} strokeWidth="1" strokeLinecap="round" opacity="0.55"/>
+      {/* Eyebrows (curved, feminine) */}
+      <path d="M23 26 Q26 24 29 26" stroke={color} strokeWidth="1.2" strokeLinecap="round" opacity="0.55"/>
+      <path d="M35 26 Q38 24 41 26" stroke={color} strokeWidth="1.2" strokeLinecap="round" opacity="0.55"/>
+      {/* Nose (softer) */}
+      <path d="M31 33 Q32 36 33 33" stroke={color} strokeWidth="0.9" strokeLinecap="round" opacity="0.4"/>
+      {/* Smile (wider) */}
+      <path d="M27 41.5 Q32 46.5 37 41.5" stroke={color} strokeWidth="1.4" strokeLinecap="round"/>
+      {/* Earrings */}
+      <circle cx="17" cy="38" r="1.8" fill={color} opacity="0.5"/>
+      <circle cx="47" cy="38" r="1.8" fill={color} opacity="0.5"/>
+      {/* Neck */}
+      <path d="M27 52 L27 60 L37 60 L37 52" fill={`${color}10`} stroke={color} strokeWidth="1.1"/>
+      {/* Dress */}
+      <path d="M2 80 Q6 62 20 58 L27 60 L37 60 L44 58 Q58 62 62 80" fill={`${color}10`} stroke={color} strokeWidth="1.3"/>
+      {/* Dress neckline */}
+      <path d="M27 60 Q32 66 37 60" stroke={color} strokeWidth="1.1" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function HeartSVG() {
+  return (
+    <svg width="40" height="36" viewBox="0 0 40 36" fill="none">
+      <defs>
+        <linearGradient id="heartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FF375F"/>
+          <stop offset="100%" stopColor="#BF5AF2"/>
+        </linearGradient>
+      </defs>
+      <path d="M20 33 C20 33 3 22 3 11.5 C3 6.8 6.8 3 11.5 3 C14.7 3 17.5 4.7 19 7.2 L20 9 L21 7.2 C22.5 4.7 25.3 3 28.5 3 C33.2 3 37 6.8 37 11.5 C37 22 20 33 20 33Z"
+        fill="url(#heartGrad)" stroke="none" opacity="0.9"/>
+      <path d="M20 33 C20 33 3 22 3 11.5 C3 6.8 6.8 3 11.5 3 C14.7 3 17.5 4.7 19 7.2 L20 9 L21 7.2 C22.5 4.7 25.3 3 28.5 3 C33.2 3 37 6.8 37 11.5 C37 22 20 33 20 33Z"
+        fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
+      {/* Shine */}
+      <path d="M12 10 Q14 7 18 9" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function SparkSVG({ color }: { color: string }) {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M6 1 L6.8 5 L10 6 L6.8 7 L6 11 L5.2 7 L2 6 L5.2 5 Z" fill={color} opacity="0.8"/>
+    </svg>
   );
 }
 
