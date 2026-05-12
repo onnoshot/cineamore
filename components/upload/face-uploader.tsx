@@ -3,8 +3,8 @@
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sheet } from "@/components/ui/sheet";
+import { ImageCropper } from "@/components/upload/image-cropper";
 import { hapticLight, hapticSuccess, hapticError } from "@/lib/utils/haptic";
-import { resizeImageToBlob } from "@/lib/utils/image-resize";
 import { cn } from "@/lib/utils/cn";
 
 interface FaceUploaderProps {
@@ -17,24 +17,40 @@ interface FaceUploaderProps {
 
 export function FaceUploader({ label, sublabel, onUpload, preview, error }: FaceUploaderProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = async (file: File) => {
+  const handleFile = (file: File) => {
     setSheetOpen(false);
     hapticLight();
-    try {
-      const blob = await resizeImageToBlob(file, 1024);
-      const objectUrl = URL.createObjectURL(blob);
-      hapticSuccess();
-      onUpload(blob, objectUrl);
-    } catch {
-      hapticError();
-    }
+    const objectUrl = URL.createObjectURL(file);
+    setCropSrc(objectUrl);
+  };
+
+  const handleCropConfirm = (blob: Blob, previewUrl: string) => {
+    setCropSrc(null);
+    hapticSuccess();
+    onUpload(blob, previewUrl);
+  };
+
+  const handleCropCancel = () => {
+    setCropSrc(null);
+    hapticError();
   };
 
   return (
     <>
+      {/* Crop overlay */}
+      {cropSrc && (
+        <ImageCropper
+          imageSrc={cropSrc}
+          label={label}
+          onConfirm={handleCropConfirm}
+          onCancel={handleCropCancel}
+        />
+      )}
+
       <motion.button
         whileTap={{ scale: 0.97 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -156,7 +172,7 @@ function SheetOption({ icon, label, onClick }: { icon: React.ReactNode; label: s
   );
 }
 
-/* ─── Inline SVG Icons ─── */
+/* ─── Icons ─── */
 function PersonIcon({ size }: { size: number }) {
   return (
     <svg width={size} height={size} fill="none" stroke="white" strokeWidth="1.5" viewBox="0 0 24 24">

@@ -102,23 +102,8 @@ export default function CreatePage() {
           />
         </motion.div>
 
-        {/* Tip */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-4 glass rounded-[14px] px-4 py-3 flex items-center gap-3"
-        >
-          <div className="w-8 h-8 rounded-full bg-white/[0.06] flex items-center justify-center shrink-0">
-            <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 16v-4M12 8h.01" strokeLinecap="round" />
-            </svg>
-          </div>
-          <p className="text-sm text-white/55 leading-relaxed">
-            En iyi sonuç için yüz açıkça görünsün, ön cephe, iyi ışık.
-          </p>
-        </motion.div>
+        {/* Photo tips */}
+        <PhotoTips />
 
         {/* Error */}
         {error && (
@@ -163,6 +148,99 @@ export default function CreatePage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+const TIPS = [
+  {
+    icon: (
+      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M6 20v-1a6 6 0 0 1 12 0v1" />
+        <path d="M17 3l2 2-2 2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+    color: "#FF375F",
+    title: "Ön Cephe",
+    desc: "Yüz kameraya dönük olsun",
+  },
+  {
+    icon: (
+      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" strokeLinecap="round" />
+      </svg>
+    ),
+    color: "#FF9F0A",
+    title: "İyi Işık",
+    desc: "Yüz gölgesiz, parlak olsun",
+  },
+  {
+    icon: (
+      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="3" />
+        <circle cx="12" cy="10" r="3" />
+        <path d="M6 21v-1a6 6 0 0 1 12 0v1" />
+      </svg>
+    ),
+    color: "#BF5AF2",
+    title: "Tek Kişi",
+    desc: "Karede başka yüz olmasın",
+  },
+  {
+    icon: (
+      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+        <path d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12z" />
+        <path d="M12 8v4l3 3" strokeLinecap="round" />
+      </svg>
+    ),
+    color: "#30D158",
+    title: "Net Görüntü",
+    desc: "Bulanık veya filtreli olmasın",
+  },
+];
+
+function PhotoTips() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.3 }}
+      className="mt-4"
+    >
+      <p className="text-[11px] font-semibold tracking-[0.12em] uppercase mb-2.5 px-1"
+        style={{ color: "rgba(255,255,255,0.25)" }}>
+        İpuçları
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        {TIPS.map((tip, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 + i * 0.07, duration: 0.4 }}
+            className="rounded-[14px] px-3 py-3 flex items-start gap-2.5"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.07)",
+            }}
+          >
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+              style={{ background: `${tip.color}18`, color: tip.color }}
+            >
+              {tip.icon}
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-white/80 leading-tight">{tip.title}</p>
+              <p className="text-[11px] leading-snug mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+                {tip.desc}
+              </p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
   );
 }
 

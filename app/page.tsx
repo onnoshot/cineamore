@@ -16,7 +16,7 @@ const SLIDES = [
     id: 1,
     illustration: <SlideTwoIllustration />,
     title: "AI Sihri",
-    sub: "4 sinematik sahne üretilir",
+    sub: "Aşkınız dört sahnede sonsuza taşınır",
   },
   {
     id: 2,
@@ -313,57 +313,103 @@ function AvatarCircle({ color, label, emoji, delay }: { color: string; label: st
   );
 }
 
-function SlideTwoIllustration() {
-  const frames = [
-    { color: "#FF375F", delay: 0.1 },
-    { color: "#FF9F0A", delay: 0.3 },
-    { color: "#BF5AF2", delay: 0.5 },
-    { color: "#30D158", delay: 0.7 },
-  ];
+const FLOW_STEPS = [
+  {
+    color: "#FF375F",
+    delay: 0.08,
+    label: "Yüzler tanınır",
+    icon: (
+      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M3 20a9 9 0 0 1 18 0" strokeLinecap="round" />
+        <path d="M15 5.5c1.5.8 2.5 2.3 2.5 4" strokeLinecap="round" opacity=".5" />
+      </svg>
+    ),
+  },
+  {
+    color: "#FF9F0A",
+    delay: 0.18,
+    label: "Sahneler canlanır",
+    icon: (
+      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" viewBox="0 0 24 24">
+        <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    color: "#BF5AF2",
+    delay: 0.28,
+    label: "Müzik işlenir",
+    icon: (
+      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" viewBox="0 0 24 24">
+        <path d="M9 18V5l12-2v13" strokeLinecap="round" />
+        <circle cx="6" cy="18" r="3" />
+        <circle cx="18" cy="16" r="3" />
+      </svg>
+    ),
+  },
+  {
+    color: "#30D158",
+    delay: 0.38,
+    label: "Video doğar",
+    icon: (
+      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" viewBox="0 0 24 24">
+        <rect x="2" y="4" width="15" height="16" rx="3" />
+        <path d="M17 8.5l5-3v13l-5-3" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M8 10l4 2.5L8 15" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
+];
 
+function SlideTwoIllustration() {
   return (
-    <div className="grid grid-cols-2 gap-3 w-full max-w-[260px]">
-      {frames.map((f, i) => (
+    <div className="flex flex-col gap-2.5 w-full max-w-[280px]">
+      {FLOW_STEPS.map((step, i) => (
         <motion.div
           key={i}
-          className="relative rounded-[16px] overflow-hidden flex flex-col items-center justify-center"
+          initial={{ opacity: 0, x: -18 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: step.delay, duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+          className="relative flex items-center gap-3 rounded-[14px] px-4 py-3 overflow-hidden"
           style={{
-            height: 100,
             background: "rgba(255,255,255,0.04)",
             border: "1px solid rgba(255,255,255,0.08)",
           }}
-          initial={{ opacity: 0, scale: 0.85, y: 12 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ delay: f.delay, duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
         >
-          {/* Shimmer effect */}
+          {/* Shimmer once on enter */}
           <motion.div
-            className="absolute inset-0"
+            className="absolute inset-0 pointer-events-none"
             style={{
-              background: `linear-gradient(135deg, transparent 0%, ${f.color}22 50%, transparent 100%)`,
+              background: `linear-gradient(90deg, transparent 0%, ${step.color}1a 50%, transparent 100%)`,
             }}
-            animate={{ x: ["-100%", "200%"] }}
-            transition={{ delay: f.delay + 0.3, duration: 1.4, ease: "easeInOut" }}
+            initial={{ x: "-100%" }}
+            animate={{ x: "200%" }}
+            transition={{ delay: step.delay + 0.2, duration: 0.9, ease: "easeOut" }}
           />
-          {/* Generated indicator */}
+
+          {/* Number badge */}
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[11px] font-bold"
+            style={{ background: `${step.color}22`, color: step.color }}
+          >
+            {i + 1}
+          </div>
+
+          {/* Text */}
+          <span className="flex-1 text-[14px] font-medium" style={{ color: "rgba(255,255,255,0.78)" }}>
+            {step.label}
+          </span>
+
+          {/* Icon */}
           <motion.div
-            className="absolute inset-0"
-            style={{ background: `${f.color}0a` }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: f.delay + 0.6, duration: 0.3 }}
-          />
-          {/* AI spark */}
-          <motion.div
-            className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
-            style={{ background: f.color }}
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: f.delay + 0.7, type: "spring", stiffness: 400 }}
+            transition={{ delay: step.delay + 0.35, type: "spring", stiffness: 350 }}
+            style={{ color: step.color }}
           >
-            ✦
+            {step.icon}
           </motion.div>
-          <span className="text-[13px] font-semibold z-10" style={{ color: `${f.color}cc` }}>{i + 1}</span>
         </motion.div>
       ))}
     </div>
