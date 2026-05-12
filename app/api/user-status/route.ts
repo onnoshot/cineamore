@@ -13,14 +13,23 @@ export async function GET(req: NextRequest) {
   if (!email) return NextResponse.json({ credits: 0 });
 
   const supabase = getAdmin();
-  const { data } = await supabase
-    .from("registrations")
-    .select("credits, videos_created")
+  // Check both registrations (legacy) and profiles (new)
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("credits, videos_created, is_vip")
     .eq("email", email)
-    .single();
+    .maybeSingle();
 
+  const { data: reg } = await supabase
+    .from("registrations")
+    .select("credits, videos_created, is_vip")
+    .eq("email", email)
+    .maybeSingle();
+
+  const d = profile ?? reg;
   return NextResponse.json({
-    credits: data?.credits ?? 0,
-    videosCreated: data?.videos_created ?? 0,
+    credits: d?.credits ?? 0,
+    videosCreated: d?.videos_created ?? 0,
+    isVip: d?.is_vip ?? false,
   });
 }

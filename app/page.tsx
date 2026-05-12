@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { hapticMedium, hapticLight } from "@/lib/utils/haptic";
+import { createClient } from "@/lib/supabase/client";
 
 const SLIDES = [
   {
@@ -30,6 +31,14 @@ export default function LandingPage() {
   const router = useRouter();
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(0);
+  const supabase = createClient();
+
+  useEffect(() => {
+    // If already logged in, skip landing
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace("/create");
+    });
+  }, []);
 
   const dragX = useMotionValue(0);
 
@@ -49,8 +58,7 @@ export default function LandingPage() {
 
   const handleStart = () => {
     hapticMedium();
-    const registered = typeof window !== "undefined" && localStorage.getItem("cineamore_user");
-    router.push(registered ? "/create" : "/register");
+    router.push("/auth");
   };
 
   const isLast = current === 2;

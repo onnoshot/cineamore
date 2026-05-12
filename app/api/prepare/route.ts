@@ -28,15 +28,23 @@ export async function POST(req: NextRequest) {
 
     // Check credits (VIP users bypass the limit)
     if (email) {
-      const { data: reg } = await supabaseAdmin
+      // Check profiles table first (new auth system), fall back to registrations (legacy)
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("credits, is_vip")
+        .eq("email", email)
+        .maybeSingle();
+
+      const { data: reg } = profile ? { data: null } : await supabaseAdmin
         .from("registrations")
         .select("credits, is_vip")
         .eq("email", email)
-        .single();
+        .maybeSingle();
 
-      const isVip = reg?.is_vip ?? false;
+      const userRec = profile ?? reg;
+      const isVip = userRec?.is_vip ?? false;
       if (!isVip) {
-        const credits = reg?.credits ?? 0;
+        const credits = userRec?.credits ?? 0;
         if (credits <= 0) {
           return NextResponse.json({ error: "credits_exhausted", creditsRemaining: 0 }, { status: 402 });
         }

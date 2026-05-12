@@ -7,15 +7,19 @@ import { FaceUploader } from "@/components/upload/face-uploader";
 import { Button } from "@/components/ui/button";
 import { useGenerationStore } from "@/store/generation-store";
 import { hapticMedium, hapticError } from "@/lib/utils/haptic";
+import { createClient } from "@/lib/supabase/client";
 
 export default function CreatePage() {
   const router = useRouter();
   const { setRefs, setJobId, setPhase, reset } = useGenerationStore();
+  const supabase = createClient();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && !localStorage.getItem("cineamore_user")) {
-      router.replace("/register");
-    }
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) { router.replace("/auth"); return; }
+      setUserEmail(user.email ?? null);
+    });
   }, [router]);
 
   const [manBlob, setManBlob] = useState<Blob | null>(null);
@@ -35,11 +39,10 @@ export default function CreatePage() {
     reset();
 
     try {
-      const user = JSON.parse(localStorage.getItem("cineamore_user") ?? "{}");
       const form = new FormData();
       form.append("man", manBlob, "man.webp");
       form.append("woman", womanBlob, "woman.webp");
-      if (user.email) form.append("email", user.email);
+      if (userEmail) form.append("email", userEmail);
 
       const res = await fetch("/api/prepare", { method: "POST", body: form });
       const data = await res.json();

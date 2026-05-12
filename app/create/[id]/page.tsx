@@ -7,6 +7,7 @@ import { VideoPlayer } from "@/components/ui/video-player";
 import { ShareActions } from "@/components/result/share-actions";
 import { useGenerationStore } from "@/store/generation-store";
 import { hapticMedium } from "@/lib/utils/haptic";
+import { createClient } from "@/lib/supabase/client";
 
 export default function ResultPage() {
   const router = useRouter();
@@ -18,20 +19,17 @@ export default function ResultPage() {
 
   const handleRestart = async () => {
     hapticMedium();
-    // Check credits before navigating
     try {
-      const user = JSON.parse(localStorage.getItem("cineamore_user") ?? "{}");
-      if (user.email) {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
         const res = await fetch(`/api/user-status?email=${encodeURIComponent(user.email)}`);
         if (res.ok) {
           const data = await res.json();
-          if (data.credits <= 0) {
-            router.push("/credits");
-            return;
-          }
+          if (!data.isVip && data.credits <= 0) { router.push("/credits"); return; }
         }
       }
-    } catch { /* non-critical — proceed to create */ }
+    } catch { /* non-critical */ }
     reset();
     router.push("/create");
   };

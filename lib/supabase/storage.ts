@@ -1,4 +1,4 @@
-import { supabase } from "./client";
+import { createClient } from "./client";
 
 const BUCKET = "cineamore";
 
@@ -6,6 +6,7 @@ export async function uploadImage(
   blob: Blob,
   path: string
 ): Promise<string> {
+  const supabase = createClient();
   const { error } = await supabase.storage
     .from(BUCKET)
     .upload(path, blob, { contentType: blob.type, upsert: true });
@@ -16,6 +17,7 @@ export async function uploadImage(
 }
 
 export async function getSignedUrl(path: string, expiresIn = 3600): Promise<string> {
+  const supabase = createClient();
   const { data, error } = await supabase.storage
     .from(BUCKET)
     .createSignedUrl(path, expiresIn);
@@ -24,5 +26,6 @@ export async function getSignedUrl(path: string, expiresIn = 3600): Promise<stri
 }
 
 export async function deleteFile(path: string) {
+  const supabase = createClient();
   await supabase.storage.from(BUCKET).remove([path]);
 }

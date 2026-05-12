@@ -61,10 +61,10 @@ export function ProgressOrchestrator() {
 
       // Step 3: Finalize
       store.setPhase("finalizing");
-      const userEmail = (() => {
-        try { return JSON.parse(localStorage.getItem("cineamore_user") ?? "{}").email ?? null; }
-        catch { return null; }
-      })();
+      const { createClient } = await import("@/lib/supabase/client");
+      const sbClient = createClient();
+      const { data: { user: sbUser } } = await sbClient.auth.getUser();
+      const userEmail = sbUser?.email ?? null;
       const finalRes = await fetch("/api/finalize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
