@@ -18,6 +18,8 @@ export default function AdminPage() {
     updatedAt?: string;
   } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [uploadResult, setUploadResult] = useState<{ ok: boolean; message: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -61,6 +63,27 @@ export default function AdminPage() {
     });
     const data = await res.json();
     setMusicStatus(data);
+  };
+
+  const handleDelete = async () => {
+    const pw = sessionStorage.getItem(SESSION_KEY) ?? "";
+    setDeleting(true);
+    setConfirmDelete(false);
+    setUploadResult(null);
+    try {
+      const res = await fetch("/api/admin/music", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${pw}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Silme hatası");
+      setUploadResult({ ok: true, message: "Müzik silindi" });
+      await refreshStatus();
+    } catch (err: unknown) {
+      setUploadResult({ ok: false, message: err instanceof Error ? err.message : "Hata" });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleUpload = async () => {
@@ -223,6 +246,56 @@ export default function AdminPage() {
               </>
             )}
           </div>
+
+          {/* Delete button — only when music exists */}
+          <AnimatePresence>
+            {musicStatus?.exists && !confirmDelete && (
+              <motion.button
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                onClick={() => setConfirmDelete(true)}
+                className="w-full h-11 rounded-[14px] text-sm font-medium transition-colors duration-200 cursor-pointer"
+                style={{
+                  background: "rgba(255,69,58,0.10)",
+                  border: "1px solid rgba(255,69,58,0.20)",
+                  color: "#FF453A",
+                }}
+              >
+                Müziği Sil
+              </motion.button>
+            )}
+            {confirmDelete && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="rounded-[14px] p-4 flex flex-col gap-3"
+                style={{ background: "rgba(255,69,58,0.10)", border: "1px solid rgba(255,69,58,0.2)" }}
+              >
+                <p className="text-sm text-center font-medium" style={{ color: "#FF453A" }}>
+                  Müzik tüm veriden silinecek. Emin misin?
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="flex-1 h-10 rounded-[12px] text-sm font-medium cursor-pointer"
+                    style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }}
+                  >
+                    Vazgeç
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="flex-1 h-10 rounded-[12px] text-sm font-semibold cursor-pointer disabled:opacity-40"
+                    style={{ background: "#FF453A", color: "white" }}
+                  >
+                    {deleting ? "Siliniyor…" : "Evet, Sil"}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* File picker */}
           <div
