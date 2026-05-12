@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ProgressOrchestrator } from "@/components/generation/progress-orchestrator";
 import { StatusText } from "@/components/generation/status-text";
 import { useGenerationStore } from "@/store/generation-store";
@@ -11,9 +11,43 @@ import { Button } from "@/components/ui/button";
 export default function GeneratingPage() {
   const router = useRouter();
   const { scenes, phase, finalVideoUrl, overallError, jobId } = useGenerationStore();
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const [tabWarning, setTabWarning] = useState(false);
 
   const completedScenes = scenes.filter((s) => s.status === "done").length;
   const isActive = phase === "generating" || phase === "finalizing";
+
+  // Screen Wake Lock — prevent screen from sleeping
+  useEffect(() => {
+    if (!isActive) return;
+
+    const request = async () => {
+      if ("wakeLock" in navigator) {
+        try {
+          wakeLockRef.current = await navigator.wakeLock.request("screen");
+        } catch { /* not critical */ }
+      }
+    };
+
+    request();
+
+    // Re-request when tab becomes visible again (wake lock auto-releases on hide)
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        setTabWarning(false);
+        request();
+      } else {
+        setTabWarning(true);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      wakeLockRef.current?.release().catch(() => {});
+      wakeLockRef.current = null;
+    };
+  }, [isActive]);
 
   useEffect(() => {
     if (phase === "done" && finalVideoUrl && jobId) router.replace(`/create/${jobId}`);
@@ -41,6 +75,28 @@ export default function GeneratingPage() {
       </div>
 
       {isActive && <ProgressOrchestrator />}
+
+      {/* Tab switched warning */}
+      <AnimatePresence>
+        {tabWarning && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="absolute top-0 left-0 right-0 z-20 flex items-center justify-center gap-2 px-5 py-3"
+            style={{ background: "rgba(255,159,10,0.18)", borderBottom: "1px solid rgba(255,159,10,0.3)" }}
+          >
+            <svg width="14" height="14" fill="none" stroke="#FF9F0A" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <path d="M12 9v4M12 17h.01" strokeLinecap="round" />
+            </svg>
+            <span className="text-[13px] font-medium" style={{ color: "#FF9F0A" }}>
+              Sayfayı açık tut — işlem devam ediyor
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {overallError ? (
         <ErrorState error={overallError} onRetry={() => router.replace("/create")} />
@@ -79,15 +135,25 @@ export default function GeneratingPage() {
           </motion.div>
 
           {/* Time hint */}
-          <motion.p
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2 }}
-            style={{ color: "rgba(255,255,255,0.25)", fontSize: 13 }}
-            className="text-center"
+            className="flex flex-col items-center gap-1.5"
           >
-            Ortalama 3–5 dakika
-          </motion.p>
+            <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 13 }} className="text-center">
+              Ortalama 3–5 dakika
+            </p>
+            <div className="flex items-center gap-1.5">
+              <svg width="11" height="11" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" viewBox="0 0 24 24">
+                <rect x="2" y="3" width="20" height="14" rx="2" />
+                <path d="M8 21h8M12 17v4" strokeLinecap="round" />
+              </svg>
+              <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 11 }} className="text-center">
+                Bu sayfayı açık tutmaya devam et
+              </p>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>
