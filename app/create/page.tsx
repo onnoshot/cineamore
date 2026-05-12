@@ -50,19 +50,19 @@ export default function CreatePage() {
   };
 
   return (
-    <div className="relative h-full w-full bg-black flex flex-col overflow-hidden">
+    <div className="page">
       <div
         className="absolute top-0 left-0 right-0 h-72 pointer-events-none"
         style={{ background: "linear-gradient(180deg, rgba(255,55,95,0.07) 0%, transparent 100%)" }}
       />
 
-      <div className="relative z-10 flex flex-col h-full max-w-sm mx-auto w-full px-5">
+      <div className="relative z-10 flex flex-col flex-1 px-5">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-          className="flex items-center gap-3 pt-12 pb-6"
+          className="flex items-center gap-3 safe-top pt-4 pb-6"
         >
           <button
             onClick={() => router.back()}
@@ -87,7 +87,6 @@ export default function CreatePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1, ease: [0.32, 0.72, 0, 1] }}
           className="grid grid-cols-2 gap-4"
-          style={{ maxHeight: "55vh" }}
         >
           <FaceUploader
             label="Sen"
@@ -137,7 +136,7 @@ export default function CreatePage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.25, ease: [0.32, 0.72, 0, 1] }}
-          className="mt-auto py-6"
+          className="mt-auto safe-bottom py-5"
         >
           <Button
             size="xl"

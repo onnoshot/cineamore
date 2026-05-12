@@ -25,7 +25,7 @@ export default function ResultPage() {
   if (!finalVideoUrl) return null;
 
   return (
-    <div className="relative h-full w-full bg-black flex flex-col overflow-hidden">
+    <div className="page">
       {/* Full-screen video */}
       <motion.div
         initial={{ opacity: 0, scale: 1.04 }}
@@ -37,7 +37,7 @@ export default function ResultPage() {
       </motion.div>
 
       {/* Top controls */}
-      <div className="relative z-10 flex items-center justify-between px-5 pt-12">
+      <div className="relative z-10 flex items-center justify-between px-5 safe-top pt-4">
         <motion.span
           initial={{ opacity: 0, x: -12 }}
           animate={{ opacity: 1, x: 0 }}
@@ -70,7 +70,7 @@ export default function ResultPage() {
         className="relative z-10 mt-auto"
       >
         <div
-          className="p-5 pb-10"
+          className="p-5 safe-bottom"
           style={{
             background: "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0.97) 100%)",
           }}

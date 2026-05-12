@@ -55,7 +55,7 @@ export default function LandingPage() {
   const isLast = current === 2;
 
   return (
-    <div className="relative h-full w-full bg-black overflow-hidden flex flex-col">
+    <div className="page">
       {/* Ambient background */}
       <div className="absolute inset-0 pointer-events-none">
         <motion.div
@@ -77,7 +77,7 @@ export default function LandingPage() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
-        className="relative z-10 pt-14 text-center"
+        className="relative z-10 safe-top pt-4 text-center"
       >
         <span
           className="text-[13px] font-semibold tracking-[0.22em] uppercase"
@@ -142,7 +142,7 @@ export default function LandingPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.3, ease: [0.32, 0.72, 0, 1] }}
-        className="relative z-10 flex flex-col items-center gap-5 pb-12 px-6"
+        className="relative z-10 flex flex-col items-center gap-5 safe-bottom px-6 pb-6"
       >
         {/* Dot indicators */}
         <div className="flex gap-2 items-center">
@@ -315,10 +315,10 @@ function AvatarCircle({ color, label, emoji, delay }: { color: string; label: st
 
 function SlideTwoIllustration() {
   const frames = [
-    { emoji: "🏜️", label: "Çöl", color: "#FF375F", delay: 0.1 },
-    { emoji: "✨", label: "Dokunuş", color: "#FF9F0A", delay: 0.3 },
-    { emoji: "👀", label: "Bakış", color: "#BF5AF2", delay: 0.5 },
-    { emoji: "🌹", label: "Gül", color: "#30D158", delay: 0.7 },
+    { color: "#FF375F", delay: 0.1 },
+    { color: "#FF9F0A", delay: 0.3 },
+    { color: "#BF5AF2", delay: 0.5 },
+    { color: "#30D158", delay: 0.7 },
   ];
 
   return (
@@ -353,7 +353,6 @@ function SlideTwoIllustration() {
             animate={{ opacity: 1 }}
             transition={{ delay: f.delay + 0.6, duration: 0.3 }}
           />
-          <span className="text-3xl z-10">{f.emoji}</span>
           {/* AI spark */}
           <motion.div
             className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
@@ -364,7 +363,7 @@ function SlideTwoIllustration() {
           >
             ✦
           </motion.div>
-          <span className="text-[11px] text-white/40 mt-1 z-10">{f.label}</span>
+          <span className="text-[13px] font-semibold z-10" style={{ color: `${f.color}cc` }}>{i + 1}</span>
         </motion.div>
       ))}
     </div>
