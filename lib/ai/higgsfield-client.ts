@@ -121,13 +121,15 @@ export async function generateSceneImageViaHiggsfield(
   womanImageUrl: string
 ): Promise<string> {
   const result = await callMcpTool("generate_image", {
-    model: "gpt_image_2",
-    prompt: scenePrompt,
-    aspect_ratio: "9:16",
-    medias: [
-      { role: "image", value: manImageUrl },
-      { role: "image", value: womanImageUrl },
-    ],
+    params: {
+      model: "gpt_image_2",
+      prompt: scenePrompt,
+      aspect_ratio: "9:16",
+      medias: [
+        { role: "image", value: manImageUrl },
+        { role: "image", value: womanImageUrl },
+      ],
+    },
   });
 
   // If URL is returned directly (sync model), use it
@@ -145,11 +147,13 @@ export async function generateSceneVideoViaHiggsfield(
   motionPrompt: string
 ): Promise<string> {
   const result = await callMcpTool("generate_video", {
-    model: "seedance_2_0",
-    prompt: motionPrompt,
-    duration: 4,
-    aspect_ratio: "9:16",
-    medias: [{ role: "start_image", value: imageUrl }],
+    params: {
+      model: "seedance_2_0",
+      prompt: motionPrompt,
+      duration: 4,
+      aspect_ratio: "9:16",
+      medias: [{ role: "start_image", value: imageUrl }],
+    },
   });
 
   const directUrl = extractMediaUrl(result);
