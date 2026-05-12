@@ -167,6 +167,18 @@ video {
   object-fit: cover;
 }
 
+/* Pointer cursors for all interactive elements */
+button, [role="button"], a { cursor: pointer; }
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Custom scrollbar (hidden on mobile) */
 ::-webkit-scrollbar { display: none; }
 * { scrollbar-width: none; }

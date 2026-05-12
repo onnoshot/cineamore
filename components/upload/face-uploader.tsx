@@ -40,10 +40,11 @@ export function FaceUploader({ label, sublabel, onUpload, preview, error }: Face
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
         onClick={() => { hapticLight(); setSheetOpen(true); }}
         className={cn(
-          "relative w-full aspect-[3/4] rounded-[20px] overflow-hidden",
+          "relative w-full aspect-[3/4] rounded-[20px] overflow-hidden cursor-pointer",
           "flex flex-col items-center justify-center gap-3",
-          "border-2 border-dashed transition-colors",
-          preview ? "border-transparent" : "border-white/15",
+          "border-2 border-dashed transition-all duration-200",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30",
+          preview ? "border-transparent" : "border-white/15 hover:border-white/30",
           error ? "border-red-500/40" : ""
         )}
       >
@@ -58,26 +59,17 @@ export function FaceUploader({ label, sublabel, onUpload, preview, error }: Face
               className="absolute inset-0"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={preview}
-                alt={label}
-                className="w-full h-full object-cover"
-              />
-              {/* Overlay gradient */}
+              <img src={preview} alt={label} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              {/* Done badge */}
               <div className="absolute bottom-3 left-0 right-0 flex justify-center">
-                <span className="glass px-3 py-1 rounded-full text-xs text-white/80 font-medium">
-                  ✓ {label}
+                <span className="glass px-3 py-1 rounded-full text-xs text-white/80 font-medium flex items-center gap-1.5">
+                  <CheckIcon size={10} />
+                  {label}
                 </span>
               </div>
-              {/* Tap to change */}
               <div className="absolute top-3 right-3">
                 <span className="glass w-8 h-8 rounded-full flex items-center justify-center">
-                  <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
+                  <EditIcon size={13} />
                 </span>
               </div>
             </motion.div>
@@ -89,16 +81,12 @@ export function FaceUploader({ label, sublabel, onUpload, preview, error }: Face
               exit={{ opacity: 0 }}
               className="flex flex-col items-center gap-3 glass w-full h-full rounded-[20px] justify-center"
             >
-              {/* Avatar placeholder */}
               <motion.div
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
                 className="w-16 h-16 rounded-full gradient-accent flex items-center justify-center"
               >
-                <svg width="28" height="28" fill="none" stroke="white" strokeWidth="1.5" viewBox="0 0 24 24">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
+                <PersonIcon size={28} />
               </motion.div>
               <div className="text-center">
                 <p className="text-white/90 font-semibold text-[15px]">{label}</p>
@@ -122,40 +110,28 @@ export function FaceUploader({ label, sublabel, onUpload, preview, error }: Face
         </motion.p>
       )}
 
-      {/* Hidden file inputs */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-      />
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="user"
-        className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-      />
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="user" className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
 
-      {/* Bottom sheet */}
       <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Fotoğraf Seç">
         <div className="flex flex-col gap-3 mt-2">
           <SheetOption
-            icon="🖼️"
+            icon={<GalleryIcon size={22} />}
             label="Galeriden Seç"
-            onClick={() => { fileInputRef.current?.click(); }}
+            onClick={() => fileInputRef.current?.click()}
           />
           <SheetOption
-            icon="📸"
+            icon={<CameraIcon size={22} />}
             label="Kameradan Çek"
-            onClick={() => { cameraInputRef.current?.click(); }}
+            onClick={() => cameraInputRef.current?.click()}
           />
           <div className="pt-2">
             <button
               onClick={() => setSheetOpen(false)}
-              className="w-full h-12 rounded-[14px] glass text-white/60 text-[15px]"
+              className="w-full h-12 rounded-[14px] glass text-white/60 text-[15px] cursor-pointer
+                         hover:text-white/80 transition-colors duration-200 focus:outline-none"
             >
               İptal
             </button>
@@ -166,15 +142,58 @@ export function FaceUploader({ label, sublabel, onUpload, preview, error }: Face
   );
 }
 
-function SheetOption({ icon, label, onClick }: { icon: string; label: string; onClick: () => void }) {
+function SheetOption({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
   return (
     <motion.button
       whileTap={{ scale: 0.97 }}
       onClick={() => { hapticLight(); onClick(); }}
-      className="w-full h-14 rounded-[14px] glass-elevated flex items-center gap-4 px-5 text-left"
+      className="w-full h-14 rounded-[14px] glass-elevated flex items-center gap-4 px-5 text-left
+                 cursor-pointer hover:bg-white/[0.06] transition-colors duration-200 focus:outline-none"
     >
-      <span className="text-2xl">{icon}</span>
+      <span className="text-white/70">{icon}</span>
       <span className="text-white/90 font-medium text-[15px]">{label}</span>
     </motion.button>
+  );
+}
+
+/* ─── Inline SVG Icons ─── */
+function PersonIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} fill="none" stroke="white" strokeWidth="1.5" viewBox="0 0 24 24">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+function CheckIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
+  );
+}
+function EditIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+}
+function GalleryIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="m21 15-5-5L5 21" />
+    </svg>
+  );
+}
+function CameraIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
   );
 }

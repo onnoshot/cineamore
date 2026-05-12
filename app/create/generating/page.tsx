@@ -17,25 +17,18 @@ export default function GeneratingPage() {
   const completedScenes = scenes.filter((s) => s.status === "done").length;
   const isActive = phase === "generating" || phase === "finalizing";
 
-  // Redirect if already done
   useEffect(() => {
-    if (phase === "done" && finalVideoUrl && jobId) {
-      router.replace(`/create/${jobId}`);
-    }
+    if (phase === "done" && finalVideoUrl && jobId) router.replace(`/create/${jobId}`);
   }, [phase, finalVideoUrl, jobId, router]);
 
-  // Redirect if no job
   useEffect(() => {
-    if (phase === "idle") {
-      router.replace("/create");
-    }
+    if (phase === "idle") router.replace("/create");
   }, [phase, router]);
 
   const textPhase = phase === "finalizing" ? 5 : completedScenes;
 
   return (
     <div className="relative h-full w-full bg-black flex flex-col overflow-hidden">
-      {/* Animated background */}
       <div className="absolute inset-0 pointer-events-none">
         <motion.div
           className="absolute inset-0"
@@ -51,7 +44,6 @@ export default function GeneratingPage() {
         <FloatingParticles />
       </div>
 
-      {/* Orchestrator */}
       {isActive && <ProgressOrchestrator />}
 
       <div className="relative z-10 flex flex-col h-full max-w-sm mx-auto w-full px-6 items-center justify-center">
@@ -59,7 +51,6 @@ export default function GeneratingPage() {
           <ErrorState error={overallError} onRetry={() => router.replace("/create")} />
         ) : (
           <>
-            {/* Progress ring */}
             <motion.div
               initial={{ opacity: 0, scale: 0.85 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -75,7 +66,6 @@ export default function GeneratingPage() {
               />
             </motion.div>
 
-            {/* Status text */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -85,38 +75,22 @@ export default function GeneratingPage() {
               <StatusText phase={textPhase} />
             </motion.div>
 
-            {/* Scene progress list */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.35 }}
-              className="mt-8 w-full space-y-2"
+              className="mt-6 w-full space-y-2"
             >
-              {SCENES.map((scene, i) => {
-                const s = scenes[i];
-                return (
-                  <SceneRow
-                    key={i}
-                    label={scene.label}
-                    status={s.status}
-                    index={i}
-                  />
-                );
-              })}
+              {SCENES.map((scene, i) => (
+                <SceneRow key={i} label={scene.label} status={scenes[i].status} index={i} />
+              ))}
+              {phase === "finalizing" && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <SceneRow label="Müzik & Son Dokunuş" status="generating-image" index={4} />
+                </motion.div>
+              )}
             </motion.div>
 
-            {/* Finalize state */}
-            {phase === "finalizing" && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="mt-4"
-              >
-                <SceneRow label="Müzik & Son Dokunuş" status="generating-image" index={4} />
-              </motion.div>
-            )}
-
-            {/* Time estimate */}
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -132,38 +106,19 @@ export default function GeneratingPage() {
   );
 }
 
-function SceneRow({
-  label,
-  status,
-  index,
-}: {
-  label: string;
-  status: string;
-  index: number;
-}) {
-  const icons: Record<string, string> = {
-    idle: "○",
-    "generating-image": "◐",
-    "generating-video": "◑",
-    done: "●",
-    error: "✕",
-  };
+const STATUS_CONFIG = {
+  idle:               { dot: "bg-white/15",   text: "text-white/30",   label: "Bekliyor" },
+  "generating-image": { dot: "bg-yellow-400", text: "text-yellow-400", label: "Görsel üretiliyor…" },
+  "generating-video": { dot: "bg-violet-400", text: "text-violet-400", label: "Video üretiliyor…" },
+  done:               { dot: "bg-green-400",  text: "text-green-400",  label: "Hazır" },
+  error:              { dot: "bg-red-400",    text: "text-red-400",    label: "Hata — yeniden denenecek" },
+} as const;
 
-  const colors: Record<string, string> = {
-    idle: "text-white/20",
-    "generating-image": "text-yellow-400",
-    "generating-video": "text-violet-400",
-    done: "text-green-400",
-    error: "text-red-400",
-  };
+type SceneStatus = keyof typeof STATUS_CONFIG;
 
-  const labels: Record<string, string> = {
-    idle: "Bekliyor",
-    "generating-image": "Görsel üretiliyor…",
-    "generating-video": "Video üretiliyor…",
-    done: "Hazır",
-    error: "Hata — yeniden denenecek",
-  };
+function SceneRow({ label, status, index }: { label: string; status: string; index: number }) {
+  const cfg = STATUS_CONFIG[status as SceneStatus] ?? STATUS_CONFIG.idle;
+  const isActive = status === "generating-image" || status === "generating-video";
 
   return (
     <motion.div
@@ -173,14 +128,15 @@ function SceneRow({
       className="glass rounded-[12px] px-4 py-3 flex items-center justify-between"
     >
       <div className="flex items-center gap-3">
-        <span className={`text-lg ${colors[status] ?? "text-white/20"}`}>
-          {icons[status] ?? "○"}
+        <span className="relative flex h-2.5 w-2.5">
+          {isActive && (
+            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${cfg.dot} opacity-60`} />
+          )}
+          <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${cfg.dot}`} />
         </span>
         <span className="text-[14px] text-white/80 font-medium">{label}</span>
       </div>
-      <span className={`text-[12px] ${colors[status] ?? "text-white/20"}`}>
-        {labels[status] ?? ""}
-      </span>
+      <span className={`text-[12px] ${cfg.text}`}>{cfg.label}</span>
     </motion.div>
   );
 }
@@ -192,17 +148,18 @@ function ErrorState({ error, onRetry }: { error: string; onRetry: () => void }) 
       animate={{ opacity: 1, scale: 1 }}
       className="flex flex-col items-center gap-6 text-center px-4"
     >
-      <div className="text-5xl">😔</div>
+      <div className="w-16 h-16 rounded-full bg-red-500/15 flex items-center justify-center">
+        <svg width="28" height="28" fill="none" stroke="#FF453A" strokeWidth="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M15 9l-6 6M9 9l6 6" />
+        </svg>
+      </div>
       <div>
         <h2 className="text-xl font-semibold text-white/90">Bir sorun çıktı</h2>
-        <p className="text-sm text-white/50 mt-2">
-          Merak etme, tekrar deneyebiliriz.
-        </p>
+        <p className="text-sm text-white/50 mt-2">Merak etme, tekrar deneyebiliriz.</p>
         <p className="text-xs text-white/25 mt-1">{error}</p>
       </div>
-      <Button size="lg" onClick={onRetry}>
-        Yeniden Dene
-      </Button>
+      <Button size="lg" onClick={onRetry}>Yeniden Dene</Button>
     </motion.div>
   );
 }
