@@ -21,7 +21,7 @@ export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   try {
-    const { jobId, videoUrls } = await req.json() as { jobId: string; videoUrls: string[] };
+    const { jobId, videoUrls, email } = await req.json() as { jobId: string; videoUrls: string[]; email?: string };
 
     if (!jobId || !videoUrls || videoUrls.length !== 4) {
       return NextResponse.json({ error: "jobId and 4 videoUrls required" }, { status: 400 });
@@ -69,6 +69,27 @@ export async function POST(req: NextRequest) {
       .createSignedUrl(finalPath, 7 * 24 * 3600);
 
     if (signedErr || !signedData) throw new Error("Could not create signed URL");
+
+    // Decrement user credits after successful generation
+    if (email) {
+      try {
+        const { data: reg } = await supabaseAdmin
+          .from("registrations")
+          .select("credits, videos_created")
+          .eq("email", email)
+          .single();
+
+        if (reg) {
+          await supabaseAdmin
+            .from("registrations")
+            .update({
+              credits: Math.max(0, (reg.credits ?? 1) - 1),
+              videos_created: (reg.videos_created ?? 0) + 1,
+            })
+            .eq("email", email);
+        }
+      } catch { /* non-critical — video still delivered */ }
+    }
 
     return NextResponse.json({ finalVideoUrl: signedData.signedUrl, jobId });
   } catch (err: unknown) {

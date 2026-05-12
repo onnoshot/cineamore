@@ -35,13 +35,19 @@ export default function CreatePage() {
     reset();
 
     try {
+      const user = JSON.parse(localStorage.getItem("cineamore_user") ?? "{}");
       const form = new FormData();
       form.append("man", manBlob, "man.webp");
       form.append("woman", womanBlob, "woman.webp");
+      if (user.email) form.append("email", user.email);
 
       const res = await fetch("/api/prepare", { method: "POST", body: form });
       const data = await res.json();
 
+      if (res.status === 402 && data.error === "credits_exhausted") {
+        router.push("/credits");
+        return;
+      }
       if (!res.ok) throw new Error(data.error ?? "Hazırlık hatası");
 
       setJobId(data.jobId);
@@ -51,6 +57,7 @@ export default function CreatePage() {
     } catch (err: unknown) {
       hapticError();
       setError(err instanceof Error ? err.message : "Bir sorun çıktı, tekrar deneyelim.");
+    } finally {
       setUploading(false);
     }
   };

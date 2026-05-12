@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const manFile = formData.get("man") as File | null;
     const womanFile = formData.get("woman") as File | null;
+    const email = (formData.get("email") as string | null)?.trim().toLowerCase();
 
     if (!manFile || !womanFile) {
       return NextResponse.json({ error: "Both images required" }, { status: 400 });
@@ -24,6 +25,20 @@ export async function POST(req: NextRequest) {
 
     const jobId = randomUUID();
     const supabaseAdmin = getAdmin();
+
+    // Check credits
+    if (email) {
+      const { data: reg } = await supabaseAdmin
+        .from("registrations")
+        .select("credits")
+        .eq("email", email)
+        .single();
+
+      const credits = reg?.credits ?? 0;
+      if (credits <= 0) {
+        return NextResponse.json({ error: "credits_exhausted", creditsRemaining: 0 }, { status: 402 });
+      }
+    }
 
     async function processImage(file: File, role: string): Promise<string> {
       const bytes = await file.arrayBuffer();

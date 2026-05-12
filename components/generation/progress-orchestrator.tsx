@@ -61,10 +61,14 @@ export function ProgressOrchestrator() {
 
       // Step 3: Finalize
       store.setPhase("finalizing");
+      const userEmail = (() => {
+        try { return JSON.parse(localStorage.getItem("cineamore_user") ?? "{}").email ?? null; }
+        catch { return null; }
+      })();
       const finalRes = await fetch("/api/finalize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobId, videoUrls }),
+        body: JSON.stringify({ jobId, videoUrls, email: userEmail }),
       });
       const finalData = await finalRes.json();
       if (!finalRes.ok) throw new Error(finalData.error ?? "Finalize failed");

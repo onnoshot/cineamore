@@ -16,8 +16,22 @@ export default function ResultPage() {
     if (!finalVideoUrl && phase !== "done") router.replace("/create");
   }, [finalVideoUrl, phase, router]);
 
-  const handleRestart = () => {
+  const handleRestart = async () => {
     hapticMedium();
+    // Check credits before navigating
+    try {
+      const user = JSON.parse(localStorage.getItem("cineamore_user") ?? "{}");
+      if (user.email) {
+        const res = await fetch(`/api/user-status?email=${encodeURIComponent(user.email)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.credits <= 0) {
+            router.push("/credits");
+            return;
+          }
+        }
+      }
+    } catch { /* non-critical — proceed to create */ }
     reset();
     router.push("/create");
   };
