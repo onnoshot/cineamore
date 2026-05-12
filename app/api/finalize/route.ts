@@ -70,12 +70,12 @@ export async function POST(req: NextRequest) {
 
     if (signedErr || !signedData) throw new Error("Could not create signed URL");
 
-    // Decrement user credits after successful generation
+    // Decrement user credits after successful generation (VIP users are exempt)
     if (email) {
       try {
         const { data: reg } = await supabaseAdmin
           .from("registrations")
-          .select("credits, videos_created")
+          .select("credits, videos_created, is_vip")
           .eq("email", email)
           .single();
 
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
           await supabaseAdmin
             .from("registrations")
             .update({
-              credits: Math.max(0, (reg.credits ?? 1) - 1),
+              credits: reg.is_vip ? reg.credits : Math.max(0, (reg.credits ?? 1) - 1),
               videos_created: (reg.videos_created ?? 0) + 1,
             })
             .eq("email", email);

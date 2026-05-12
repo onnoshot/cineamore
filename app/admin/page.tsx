@@ -9,7 +9,7 @@ const SESSION_KEY = "cineamore_admin_pw";
    Types
 ───────────────────────────────────────────── */
 interface MusicStatus { exists: boolean; size?: number; updatedAt?: string }
-interface User { id: string; full_name: string; email: string; city: string; birth_year: number; created_at: string }
+interface User { id: string; full_name: string; email: string; city: string; birth_year: number; created_at: string; is_vip: boolean; credits: number; videos_created: number }
 interface Stats {
   total: number; thisWeek: number; avgAge: number;
   cities: { city: string; count: number }[];
@@ -305,18 +305,38 @@ function MusicTab() {
    Users Tab
 ───────────────────────────────────────────── */
 function UsersTab() {
-  const [data, setData] = useState<{ users: User[]; stats: Stats } | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [vipToggles, setVipToggles] = useState<Record<string, boolean>>({});
 
   const pw = () => sessionStorage.getItem(SESSION_KEY) ?? "";
 
   useEffect(() => {
     fetch("/api/admin/users", { headers: { Authorization: `Bearer ${pw()}` } })
       .then((r) => r.json())
-      .then((d) => { setData(d); setLoading(false); })
+      .then((d) => { setUsers(d.users ?? []); setStats(d.stats); setLoading(false); })
       .catch(() => { setError("Veri alınamadı"); setLoading(false); });
   }, []);
+
+  const toggleVip = async (user: User) => {
+    const newVip = !user.is_vip;
+    setVipToggles((prev) => ({ ...prev, [user.id]: true }));
+    setUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, is_vip: newVip } : u));
+    try {
+      await fetch("/api/admin/toggle-vip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${pw()}` },
+        body: JSON.stringify({ userId: user.id, isVip: newVip }),
+      });
+    } catch {
+      // revert on error
+      setUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, is_vip: user.is_vip } : u));
+    } finally {
+      setVipToggles((prev) => { const next = { ...prev }; delete next[user.id]; return next; });
+    }
+  };
 
   if (loading) return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center py-24">
@@ -326,9 +346,7 @@ function UsersTab() {
   );
 
   if (error) return <div className="px-5 py-10 text-center text-white/40 text-sm">{error}</div>;
-  if (!data) return null;
-
-  const { users, stats } = data;
+  if (!stats) return null;
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -337,10 +355,10 @@ function UsersTab() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: "Toplam Üye", value: stats.total, color: "#FF375F", icon: <UsersIcon /> },
-          { label: "Bu Hafta", value: `+${stats.thisWeek}`, color: "#30D158", icon: <TrendIcon /> },
-          { label: "Ort. Yaş", value: stats.avgAge || "—", color: "#FF9F0A", icon: <AgeIcon /> },
-          { label: "Şehir", value: stats.cities[0]?.city ?? "—", color: "#BF5AF2", icon: <CityIcon /> },
+          { label: "Toplam Üye", value: stats!.total, color: "#FF375F", icon: <UsersIcon /> },
+          { label: "Bu Hafta", value: `+${stats!.thisWeek}`, color: "#30D158", icon: <TrendIcon /> },
+          { label: "Ort. Yaş", value: stats!.avgAge || "—", color: "#FF9F0A", icon: <AgeIcon /> },
+          { label: "Şehir", value: stats!.cities[0]?.city ?? "—", color: "#BF5AF2", icon: <CityIcon /> },
         ].map((s, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }}
@@ -357,29 +375,29 @@ function UsersTab() {
       </div>
 
       {/* Daily trend */}
-      {stats.dailyTrend.some((d) => d.count > 0) && (
+      {stats!.dailyTrend.some((d) => d.count > 0) && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           className="glass-strong rounded-[20px] p-5">
           <p className="text-[13px] font-semibold mb-4" style={{ color: "rgba(255,255,255,0.5)" }}>Son 7 Gün</p>
-          <TrendChart data={stats.dailyTrend} color="#FF375F" />
+          <TrendChart data={stats!.dailyTrend} color="#FF375F" />
         </motion.div>
       )}
 
       {/* City distribution */}
-      {stats.cities.length > 0 && (
+      {stats!.cities.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
           className="glass-strong rounded-[20px] p-5">
           <p className="text-[13px] font-semibold mb-4" style={{ color: "rgba(255,255,255,0.5)" }}>Şehir Dağılımı</p>
-          <CityChart data={stats.cities} />
+          <CityChart data={stats!.cities} />
         </motion.div>
       )}
 
       {/* Age groups */}
-      {stats.ageGroups.some((g) => g.count > 0) && (
+      {stats!.ageGroups.some((g) => g.count > 0) && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
           className="glass-strong rounded-[20px] p-5">
           <p className="text-[13px] font-semibold mb-4" style={{ color: "rgba(255,255,255,0.5)" }}>Yaş Grupları</p>
-          <AgeChart data={stats.ageGroups} />
+          <AgeChart data={stats!.ageGroups} />
         </motion.div>
       )}
 
@@ -389,7 +407,15 @@ function UsersTab() {
         <div className="px-5 py-4 flex items-center justify-between"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
           <p className="text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>Kayıtlı Kullanıcılar</p>
-          <p className="text-[12px]" style={{ color: "rgba(255,255,255,0.3)" }}>{users.length} kayıt</p>
+          <div className="flex items-center gap-2">
+            {users.some((u) => u.is_vip) && (
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                style={{ background: "rgba(255,214,0,0.15)", color: "#FFD600" }}>
+                {users.filter((u) => u.is_vip).length} VIP
+              </span>
+            )}
+            <p className="text-[12px]" style={{ color: "rgba(255,255,255,0.3)" }}>{users.length} kayıt</p>
+          </div>
         </div>
         {users.length === 0 ? (
           <p className="px-5 py-8 text-center text-sm" style={{ color: "rgba(255,255,255,0.25)" }}>Henüz kayıt yok</p>
@@ -398,24 +424,56 @@ function UsersTab() {
             {users.map((u, i) => (
               <motion.div key={u.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.35 + i * 0.04 }}
-                className="px-5 py-3.5 flex items-start gap-3"
+                className="px-5 py-3.5 flex items-center gap-3"
                 style={{ borderBottom: i < users.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
                 {/* Avatar */}
-                <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
-                  style={{ background: `hsl(${(u.full_name.charCodeAt(0) * 37) % 360}, 60%, 25%)`, color: `hsl(${(u.full_name.charCodeAt(0) * 37) % 360}, 80%, 70%)` }}>
-                  {u.full_name.charAt(0).toUpperCase()}
+                <div className="relative w-9 h-9 flex-shrink-0">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
+                    style={{ background: `hsl(${(u.full_name.charCodeAt(0) * 37) % 360}, 60%, 25%)`, color: `hsl(${(u.full_name.charCodeAt(0) * 37) % 360}, 80%, 70%)` }}>
+                    {u.full_name.charAt(0).toUpperCase()}
+                  </div>
+                  {u.is_vip && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
+                      style={{ background: "#FFD600", fontSize: 8 }}>
+                      ★
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-white/85 truncate">{u.full_name}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[14px] font-semibold text-white/85 truncate">{u.full_name}</p>
+                    {u.is_vip && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0"
+                        style={{ background: "rgba(255,214,0,0.2)", color: "#FFD600", letterSpacing: "0.04em" }}>
+                        VIP
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[12px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>{u.email}</p>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                     <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{u.city}</span>
                     <span style={{ color: "rgba(255,255,255,0.15)", fontSize: 10 }}>·</span>
                     <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>{u.birth_year}</span>
                     <span style={{ color: "rgba(255,255,255,0.15)", fontSize: 10 }}>·</span>
-                    <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.25)" }}>{formatDate(u.created_at)}</span>
+                    <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>
+                      {u.credits ?? 0} kredi · {u.videos_created ?? 0} video
+                    </span>
                   </div>
                 </div>
+                {/* VIP Toggle */}
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => toggleVip(u)}
+                  disabled={!!vipToggles[u.id]}
+                  className="flex-shrink-0 h-8 px-3 rounded-full text-[11px] font-bold cursor-pointer disabled:opacity-50 focus:outline-none transition-all duration-200"
+                  style={{
+                    background: u.is_vip ? "rgba(255,214,0,0.2)" : "rgba(255,255,255,0.07)",
+                    color: u.is_vip ? "#FFD600" : "rgba(255,255,255,0.35)",
+                    border: u.is_vip ? "1px solid rgba(255,214,0,0.35)" : "1px solid rgba(255,255,255,0.1)",
+                  }}
+                >
+                  {vipToggles[u.id] ? "…" : u.is_vip ? "VIP ✓" : "VIP"}
+                </motion.button>
               </motion.div>
             ))}
           </div>

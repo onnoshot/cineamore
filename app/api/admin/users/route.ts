@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 
     const { data: users, error } = await supabase
       .from("registrations")
-      .select("id, full_name, email, city, birth_year, created_at")
+      .select("id, full_name, email, city, birth_year, created_at, is_vip, credits, videos_created")
       .order("created_at", { ascending: false });
 
     if (error) throw error;

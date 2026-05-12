@@ -26,17 +26,20 @@ export async function POST(req: NextRequest) {
     const jobId = randomUUID();
     const supabaseAdmin = getAdmin();
 
-    // Check credits
+    // Check credits (VIP users bypass the limit)
     if (email) {
       const { data: reg } = await supabaseAdmin
         .from("registrations")
-        .select("credits")
+        .select("credits, is_vip")
         .eq("email", email)
         .single();
 
-      const credits = reg?.credits ?? 0;
-      if (credits <= 0) {
-        return NextResponse.json({ error: "credits_exhausted", creditsRemaining: 0 }, { status: 402 });
+      const isVip = reg?.is_vip ?? false;
+      if (!isVip) {
+        const credits = reg?.credits ?? 0;
+        if (credits <= 0) {
+          return NextResponse.json({ error: "credits_exhausted", creditsRemaining: 0 }, { status: 402 });
+        }
       }
     }
 
