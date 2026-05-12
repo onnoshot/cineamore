@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { join } from "path";
+import { writeFile, unlink } from "fs/promises";
+import { tmpdir } from "os";
+import { randomUUID } from "crypto";
 
 const DEMO_MODE = process.env.DEMO_MODE === "true";
 const DEMO_FINAL_VIDEO =
@@ -31,10 +34,28 @@ export async function POST(req: NextRequest) {
     }
 
     const { concatVideosWithAudio } = await import("@/lib/video/ffmpeg-concat");
-    const audioPath = join(process.cwd(), "public", "audio", "story_track.mp3");
     const supabaseAdmin = getAdmin();
 
+    // Download music from Supabase if available
+    let audioPath: string | null = null;
+    let tempAudioPath: string | null = null;
+    const { data: musicData, error: musicErr } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .download("admin/music.mp3");
+
+    if (!musicErr && musicData) {
+      tempAudioPath = join(tmpdir(), `music-${randomUUID()}.mp3`);
+      await writeFile(tempAudioPath, Buffer.from(await musicData.arrayBuffer()));
+      audioPath = tempAudioPath;
+    } else {
+      console.log("[finalize] No admin music found, skipping audio");
+    }
+
     const finalBuffer = await concatVideosWithAudio(videoUrls, audioPath);
+
+    if (tempAudioPath) {
+      await unlink(tempAudioPath).catch(() => {});
+    }
 
     const finalPath = `jobs/${jobId}/final.mp4`;
     const { error } = await supabaseAdmin.storage

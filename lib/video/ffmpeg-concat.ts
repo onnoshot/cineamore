@@ -9,7 +9,7 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 
 export async function concatVideosWithAudio(
   videoUrls: string[],
-  audioPath: string
+  audioPath: string | null
 ): Promise<Buffer> {
   const workDir = join(tmpdir(), `cineamore-${randomUUID()}`);
   await mkdir(workDir, { recursive: true });
@@ -45,17 +45,23 @@ export async function concatVideosWithAudio(
       .run();
   });
 
-  // Step 2: add audio
-  await new Promise<void>((resolve, reject) => {
-    ffmpeg()
-      .input(tempVideoPath)
-      .input(audioPath)
-      .outputOptions(["-c:v", "copy", "-c:a", "aac", "-shortest", "-movflags", "+faststart"])
-      .output(finalPath)
-      .on("end", () => resolve())
-      .on("error", (err: Error) => reject(err))
-      .run();
-  });
+  // Step 2: add audio (skip if no audio file)
+  if (audioPath) {
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg()
+        .input(tempVideoPath)
+        .input(audioPath)
+        .outputOptions(["-c:v", "copy", "-c:a", "aac", "-shortest", "-movflags", "+faststart"])
+        .output(finalPath)
+        .on("end", () => resolve())
+        .on("error", (err: Error) => reject(err))
+        .run();
+    });
+  } else {
+    // No audio: just copy the concat result
+    const { copyFile } = await import("fs/promises");
+    await copyFile(tempVideoPath, finalPath);
+  }
 
   const { readFile } = await import("fs/promises");
   const buffer = await readFile(finalPath);
