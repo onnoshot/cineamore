@@ -16,6 +16,7 @@ interface Stats {
   ageGroups: { label: string; count: number }[];
   dailyTrend: { date: string; count: number }[];
 }
+interface VideoItem { jobId: string; url: string; size: number | null; createdAt: string | null }
 
 /* ─────────────────────────────────────────────
    Root
@@ -25,7 +26,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [authError, setAuthError] = useState("");
   const [checking, setChecking] = useState(false);
-  const [tab, setTab] = useState<"music" | "users">("music");
+  const [tab, setTab] = useState<"music" | "users" | "videos">("music");
 
   useEffect(() => {
     const pw = sessionStorage.getItem(SESSION_KEY);
@@ -68,7 +69,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="relative z-10 flex gap-1 px-5 pb-3 flex-shrink-0">
-        {(["music", "users"] as const).map((t) => (
+        {(["music", "users", "videos"] as const).map((t) => (
           <motion.button
             key={t}
             onClick={() => setTab(t)}
@@ -79,7 +80,7 @@ export default function AdminPage() {
               border: tab === t ? "1px solid rgba(255,255,255,0.15)" : "1px solid transparent",
             }}
           >
-            {t === "music" ? "Müzik" : "Kullanıcılar"}
+            {t === "music" ? "Müzik" : t === "users" ? "Kullanıcılar" : "Videolar"}
           </motion.button>
         ))}
       </div>
@@ -89,7 +90,9 @@ export default function AdminPage() {
         <AnimatePresence mode="wait">
           {tab === "music"
             ? <MusicTab key="music" />
-            : <UsersTab key="users" />}
+            : tab === "users"
+            ? <UsersTab key="users" />
+            : <VideosTab key="videos" />}
         </AnimatePresence>
       </div>
     </div>
@@ -516,6 +519,157 @@ function AgeChart({ data }: { data: { label: string; count: number }[] }) {
         </div>
       ))}
     </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Videos Tab
+───────────────────────────────────────────── */
+function VideosTab() {
+  const [videos, setVideos] = useState<VideoItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [playingId, setPlayingId] = useState<string | null>(null);
+
+  const pw = () => sessionStorage.getItem(SESSION_KEY) ?? "";
+
+  useEffect(() => {
+    fetch("/api/admin/videos", { headers: { Authorization: `Bearer ${pw()}` } })
+      .then((r) => r.json())
+      .then((d) => { setVideos(d.videos ?? []); setLoading(false); })
+      .catch(() => { setError("Videolar alınamadı"); setLoading(false); });
+  }, []);
+
+  const handleDownload = async (video: VideoItem) => {
+    try {
+      const res = await fetch(video.url);
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `cineamore-${video.jobId.slice(0, 8)}.mp4`;
+      a.click();
+    } catch {
+      window.open(video.url, "_blank");
+    }
+  };
+
+  if (loading) return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      className="flex items-center justify-center py-24">
+      <motion.div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white/70"
+        animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} />
+    </motion.div>
+  );
+
+  if (error) return <div className="px-5 py-10 text-center text-white/40 text-sm">{error}</div>;
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+      className="px-5 pb-10 flex flex-col gap-4">
+
+      {/* Header stat */}
+      <div className="flex items-center justify-between">
+        <p className="text-[13px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+          {videos.length === 0 ? "Henüz video yok" : `${videos.length} video oluşturuldu`}
+        </p>
+      </div>
+
+      {videos.length === 0 ? (
+        <div className="glass rounded-[20px] py-16 flex flex-col items-center gap-3">
+          <svg width="36" height="36" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" viewBox="0 0 24 24">
+            <rect x="2" y="4" width="15" height="16" rx="3" />
+            <path d="M17 8.5l5-3v13l-5-3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <p className="text-sm" style={{ color: "rgba(255,255,255,0.25)" }}>Henüz tamamlanan video yok</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {videos.map((video, i) => (
+            <motion.div key={video.jobId}
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.06 }}
+              className="glass-strong rounded-[20px] overflow-hidden">
+
+              {/* Video player */}
+              <div className="relative w-full" style={{ aspectRatio: "9/16", maxHeight: 320 }}>
+                {playingId === video.jobId ? (
+                  <video
+                    src={video.url}
+                    className="w-full h-full object-cover"
+                    autoPlay
+                    controls
+                    playsInline
+                    style={{ display: "block" }}
+                  />
+                ) : (
+                  <div
+                    className="w-full h-full flex items-center justify-center cursor-pointer"
+                    style={{ background: "rgba(255,255,255,0.03)" }}
+                    onClick={() => setPlayingId(video.jobId)}
+                  >
+                    {/* Gradient preview bg */}
+                    <div className="absolute inset-0"
+                      style={{ background: "linear-gradient(135deg, rgba(255,55,95,0.15) 0%, rgba(191,90,242,0.15) 100%)" }} />
+
+                    {/* Play button */}
+                    <motion.div
+                      className="relative w-16 h-16 rounded-full flex items-center justify-center"
+                      style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.2)" }}
+                      whileTap={{ scale: 0.92 }}
+                      animate={{ scale: [1, 1.06, 1] }}
+                      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </motion.div>
+
+                    {/* Job ID badge */}
+                    <div className="absolute top-3 left-3 px-2 py-1 rounded-lg"
+                      style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)" }}>
+                      <span className="text-[10px] font-mono" style={{ color: "rgba(255,255,255,0.5)" }}>
+                        {video.jobId.slice(0, 8)}…
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Meta + actions */}
+              <div className="px-4 py-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[13px] font-medium text-white/70">
+                    {video.createdAt ? formatDate(video.createdAt) : "—"}
+                  </p>
+                  {video.size && (
+                    <p className="text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>
+                      {formatSize(video.size)}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {playingId === video.jobId && (
+                    <button onClick={() => setPlayingId(null)}
+                      className="h-9 px-3 rounded-[12px] text-[12px] font-medium cursor-pointer"
+                      style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}>
+                      Kapat
+                    </button>
+                  )}
+                  <button onClick={() => handleDownload(video)}
+                    className="h-9 px-4 rounded-[12px] text-[12px] font-semibold cursor-pointer flex items-center gap-1.5"
+                    style={{ background: "rgba(255,55,95,0.15)", color: "#FF375F", border: "1px solid rgba(255,55,95,0.25)" }}>
+                    <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" strokeLinecap="round" />
+                    </svg>
+                    İndir
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </motion.div>
   );
 }
 
