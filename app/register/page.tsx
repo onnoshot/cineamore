@@ -102,7 +102,7 @@ export default function RegisterPage() {
   const allFilled = fullName.trim() && email.trim() && city.trim() && birthYear;
 
   return (
-    <div className="page flex flex-col overflow-y-auto">
+    <div className="page flex flex-col" style={{ overflowY: "auto", overflowX: "hidden" }}>
       {/* Ambient */}
       <div className="fixed inset-0 pointer-events-none">
         <motion.div
