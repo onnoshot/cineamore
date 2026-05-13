@@ -189,22 +189,34 @@ export default function GeneratingPage() {
           {/* Activity log */}
           <ActivityFeed scenes={scenes} phase={phase} buildLog={buildLog} />
 
-          {/* Wake lock status */}
+          {/* Email + wake lock notice */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2 }}
-            className="flex items-center gap-1.5 safe-bottom pb-2"
+            className="flex flex-col items-center gap-2 safe-bottom pb-2"
           >
-            <motion.div
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ background: wakeLockActive ? "#30D158" : "rgba(255,255,255,0.18)" }}
-              animate={wakeLockActive ? { opacity: [1, 0.4, 1] } : { opacity: 1 }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>
-              {wakeLockActive ? "Ekran açık kalıyor" : "Bu sayfayı açık tut"}
-            </span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+              style={{ background: "rgba(10,132,255,0.1)", border: "1px solid rgba(10,132,255,0.18)" }}>
+              <svg width="12" height="12" fill="none" stroke="#0A84FF" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <polyline points="22,6 12,13 2,6" />
+              </svg>
+              <span style={{ fontSize: 11, color: "#0A84FF", fontWeight: 600 }}>
+                Tamamlanınca e-posta gönderilecek
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <motion.div
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: wakeLockActive ? "#30D158" : "rgba(255,255,255,0.18)" }}
+                animate={wakeLockActive ? { opacity: [1, 0.4, 1] } : { opacity: 1 }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>
+                {wakeLockActive ? "Ekran açık kalıyor" : "Bu sayfayı açık tut"}
+              </span>
+            </div>
           </motion.div>
 
         </div>

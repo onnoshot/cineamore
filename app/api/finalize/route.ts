@@ -4,6 +4,7 @@ import { join } from "path";
 import { writeFile, unlink } from "fs/promises";
 import { tmpdir } from "os";
 import { randomUUID } from "crypto";
+import { sendResultEmail } from "@/lib/email/send-result";
 
 const DEMO_MODE = process.env.DEMO_MODE === "true";
 const DEMO_FINAL_VIDEO =
@@ -69,6 +70,16 @@ export async function POST(req: NextRequest) {
       .createSignedUrl(finalPath, 7 * 24 * 3600);
 
     if (signedErr || !signedData) throw new Error("Could not create signed URL");
+
+    // Send result email (non-blocking — don't fail the request if email fails)
+    if (email) {
+      const appUrl = req.headers.get("origin") ?? req.headers.get("x-forwarded-host")
+        ? `https://${req.headers.get("x-forwarded-host")}`
+        : process.env.NEXT_PUBLIC_APP_URL ?? "";
+      sendResultEmail(email, jobId, appUrl).catch((err) =>
+        console.error("[finalize] email error:", err)
+      );
+    }
 
     // Decrement user credits after successful generation (VIP users are exempt)
     if (email) {
