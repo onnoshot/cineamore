@@ -454,7 +454,7 @@ export default function HomePage() {
   return (
     <div
       className="relative min-h-screen overflow-x-hidden"
-      style={{ background: "#0a0a0f" }}
+      style={{ background: "#0a0a0f", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
     >
       <AmbientBlobs />
 

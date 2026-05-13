@@ -77,7 +77,7 @@ export default function CreatePage() {
         style={{ background: "linear-gradient(180deg, rgba(255,55,95,0.07) 0%, transparent 100%)" }}
       />
 
-      <div className="relative z-10 flex flex-col flex-1 px-5">
+      <div className="relative z-10 flex flex-col flex-1 px-5 overflow-y-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}

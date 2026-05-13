@@ -189,7 +189,7 @@ export default function GeneratingPage() {
       {/* ── Ambient blobs ── */}
       <AmbientBackground stage={stage} />
 
-      <div className="relative z-10 flex flex-col items-center flex-1 px-5 safe-top pt-6 pb-8 w-full max-w-sm mx-auto">
+      <div className="relative z-10 flex flex-col items-center flex-1 px-5 safe-top pt-6 pb-8 w-full max-w-sm mx-auto overflow-y-auto">
 
         {/* ── Status label ── */}
         <motion.div

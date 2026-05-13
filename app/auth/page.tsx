@@ -66,7 +66,7 @@ function AuthContent() {
   };
 
   return (
-    <div className="page flex flex-col" style={{ overflowY: "auto" }}>
+    <div className="page flex flex-col" style={{ overflowY: "auto", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
       {/* Ambient */}
       <div className="fixed inset-0 pointer-events-none">
         <motion.div

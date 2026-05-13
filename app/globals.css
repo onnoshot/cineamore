@@ -22,11 +22,12 @@ html, body {
   color: #fff;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
-  overflow: hidden;
   color-scheme: dark;
+  /* overflow handled per-page: fixed .page pages clip themselves;
+     scrollable pages (landing, auth, credits) scroll naturally */
 }
 
-/* ─── Full-screen page wrapper ─── */
+/* ─── Full-screen page wrapper (fixed, non-scrollable) ─── */
 .page {
   position: fixed;
   inset: 0;
@@ -34,6 +35,13 @@ html, body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+/* ─── Scrollable page sections inside .page ─── */
+.page-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
 }
 
 /* ─── Apple Liquid Glass ─── */

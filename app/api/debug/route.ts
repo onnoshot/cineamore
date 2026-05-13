@@ -60,9 +60,25 @@ export async function GET(req: NextRequest) {
     results.supabase_storage = `CRASH: ${e instanceof Error ? e.message : String(e)}`;
   }
 
-  // 5. Test Higgsfield generate_image submit (costs ~1 credit — comment out if not needed)
-  // Disabled by default to avoid wasting credits
-  results.generate_image_test = "SKIPPED (enable manually if needed)";
+  // 5. Test Higgsfield generate_image submit — pass ?gen=1 to enable (costs ~1 credit)
+  const url = new URL(req.url);
+  if (url.searchParams.get("gen") === "1") {
+    try {
+      const { submitSceneImageJob } = await import("@/lib/ai/higgsfield-client");
+      const testUrl = `https://${host}/api/img/debug-test/man`;
+      const { jobId: hJobId, directUrl } = await submitSceneImageJob(
+        "A couple walking in a park, cinematic lighting, 9:16",
+        testUrl, testUrl
+      );
+      results.generate_image_test = directUrl
+        ? `OK direct URL: ${directUrl.slice(0, 60)}`
+        : `OK jobId: ${hJobId}`;
+    } catch (e: unknown) {
+      results.generate_image_test = `ERROR: ${e instanceof Error ? e.message : String(e)}`;
+    }
+  } else {
+    results.generate_image_test = "SKIPPED — add ?gen=1 to test (costs ~1 credit)";
+  }
 
   return NextResponse.json({ ok: true, results }, { status: 200 });
 }

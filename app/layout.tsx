@@ -50,7 +50,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="h-full overflow-hidden bg-black antialiased">
+      <body className="h-full bg-black antialiased">
         {children}
       </body>
     </html>
