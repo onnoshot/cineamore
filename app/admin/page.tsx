@@ -433,10 +433,16 @@ function UsersTab() {
                 style={{ borderBottom: i < users.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
                 {/* Avatar */}
                 <div className="relative w-9 h-9 flex-shrink-0">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
-                    style={{ background: `hsl(${(u.full_name.charCodeAt(0) * 37) % 360}, 60%, 25%)`, color: `hsl(${(u.full_name.charCodeAt(0) * 37) % 360}, 80%, 70%)` }}>
-                    {u.full_name.charAt(0).toUpperCase()}
-                  </div>
+                  {(() => {
+                    const initial = (u.full_name || u.email || "?").charAt(0).toUpperCase();
+                    const seed = (u.full_name || u.email || "?").charCodeAt(0) * 37;
+                    return (
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
+                        style={{ background: `hsl(${seed % 360}, 60%, 25%)`, color: `hsl(${seed % 360}, 80%, 70%)` }}>
+                        {initial}
+                      </div>
+                    );
+                  })()}
                   {u.is_vip && (
                     <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
                       style={{ background: "#FFD600", fontSize: 8 }}>
@@ -446,7 +452,7 @@ function UsersTab() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <p className="text-[14px] font-semibold text-white/85 truncate">{u.full_name}</p>
+                    <p className="text-[14px] font-semibold text-white/85 truncate">{u.full_name || <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>Profil tamamlanmamış</span>}</p>
                     {u.is_vip && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0"
                         style={{ background: "rgba(255,214,0,0.2)", color: "#FFD600", letterSpacing: "0.04em" }}>
