@@ -71,33 +71,30 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    async function processImage(file: File, role: string): Promise<string> {
+    async function processImage(file: File, role: string): Promise<void> {
       const bytes = await file.arrayBuffer();
       const resized = await sharp(Buffer.from(bytes))
         .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
         .webp({ quality: 88 })
         .toBuffer();
 
-      // Store in Supabase for later use (result page, finalize)
       const path = `jobs/${jobId}/${role}.webp`;
       const { error } = await supabaseAdmin.storage
         .from(BUCKET)
         .upload(path, resized, { contentType: "image/webp", upsert: true });
       if (error) throw new Error(`Upload error: ${error.message}`);
-
-      // Upload directly to Higgsfield so image_auto can access it as a reference
-      const { uploadImageToHiggsfield } = await import("@/lib/ai/higgsfield-client");
-      const higgsfieldMediaId = await uploadImageToHiggsfield(resized);
-      return higgsfieldMediaId;
     }
 
-    const [manUrl, womanUrl] = await Promise.all([
+    await Promise.all([
       processImage(manFile, "man"),
       processImage(womanFile, "woman"),
     ]);
 
-    // Schedule cleanup after 1h (via database trigger or edge function in production)
-    // For now we store jobId for reference
+    // Serve images through our own Vercel endpoint — Higgsfield can access these
+    const host = req.headers.get("host") ?? "cinematic-love.vercel.app";
+    const baseUrl = `https://${host}`;
+    const manUrl = `${baseUrl}/api/img/${jobId}/man`;
+    const womanUrl = `${baseUrl}/api/img/${jobId}/woman`;
 
     return NextResponse.json({ jobId, manUrl, womanUrl, city: userCity });
   } catch (err: unknown) {
