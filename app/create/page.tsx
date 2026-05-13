@@ -86,7 +86,7 @@ export default function CreatePage() {
           className="flex items-center gap-3 safe-top pt-4 pb-6"
         >
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push("/")}
             className="w-10 h-10 rounded-full glass flex items-center justify-center
                        cursor-pointer hover:bg-white/[0.08] transition-colors duration-200 focus:outline-none"
           >
