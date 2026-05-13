@@ -104,29 +104,33 @@ function extractMediaUrl(text: string): string | null {
 }
 
 /** Poll job_status until output URL is available.
- * With sync:true the server already waits ~25s per call, so we use a short
- * retry gap — total timeout ≈ 50 * (25s server + 3s gap) ≈ 23 minutes. */
+ * sync:true is sent but may not block server-side via HTTP transport;
+ * we use adaptive back-off: 4s → 6s → 8s → 10s, max 20 min total. */
 async function waitForOutput(jobId: string): Promise<string> {
-  const MAX_ATTEMPTS = 50;
+  const TIMEOUT_MS = 20 * 60 * 1000; // 20 min hard ceiling
+  const start = Date.now();
+  let attempt = 0;
 
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+  while (Date.now() - start < TIMEOUT_MS) {
     const result = await callMcpTool("job_status", { jobId, sync: true });
 
     // Check for output URL
     const url = extractMediaUrl(result);
     if (url) return url;
 
-    // Check for failure
-    if (/\b(fail|failed|error|cancelled|canceled)\b/i.test(result)) {
+    // Check for any terminal failure state
+    if (/\b(fail(ed)?|error|cancelled?|rejected|invalid|timeout)\b/i.test(result)) {
       throw new Error(`Higgsfield job failed: ${result.slice(0, 300)}`);
     }
 
-    console.log(`[higgsfield] job ${jobId} attempt ${attempt + 1} pending`);
-    // Server already waited ~25s (sync:true); just a short gap before next poll
-    await new Promise((r) => setTimeout(r, 3000));
+    attempt++;
+    // Adaptive back-off: start at 4s, ramp to 10s after a few attempts
+    const gap = Math.min(4000 + attempt * 1000, 10000);
+    console.log(`[higgsfield] job ${jobId} attempt ${attempt} pending, next in ${gap}ms`);
+    await new Promise((r) => setTimeout(r, gap));
   }
 
-  throw new Error(`Higgsfield job ${jobId} timed out after ${MAX_ATTEMPTS} attempts`);
+  throw new Error(`Higgsfield job ${jobId} timed out after ${Math.round((Date.now() - start) / 60000)} min`);
 }
 
 /**
