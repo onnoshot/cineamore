@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { hapticLight, hapticMedium, hapticSuccess, hapticError } from "@/lib/utils/haptic";
+import { LogoMark } from "@/components/ui/logo-mark";
 
 export default function ProfileSetupPage() {
   const router = useRouter();
@@ -89,11 +90,8 @@ export default function ProfileSetupPage() {
           className="text-center pt-2"
         >
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-[20px] mb-4"
-            style={{ background: "rgba(48,209,88,0.12)", border: "1px solid rgba(48,209,88,0.2)" }}>
-            <svg width="26" height="26" fill="none" stroke="#30D158" strokeWidth="1.8" viewBox="0 0 24 24">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" strokeLinecap="round" />
-            </svg>
+            style={{ background: "linear-gradient(135deg, rgba(255,55,95,0.2), rgba(191,90,242,0.2))", border: "1px solid rgba(255,255,255,0.12)" }}>
+            <LogoMark size={30} color="#FF375F" />
           </div>
           <h1 className="text-[26px] font-bold text-white" style={{ letterSpacing: "-0.02em" }}>
             Profilini Tamamla

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { hapticMedium, hapticSuccess, hapticError } from "@/lib/utils/haptic";
+import { LogoMark } from "@/components/ui/logo-mark";
 
 function AuthContent() {
   const router = useRouter();
@@ -90,11 +91,7 @@ function AuthContent() {
         >
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-[22px] mb-4"
             style={{ background: "linear-gradient(135deg, rgba(255,55,95,0.2), rgba(191,90,242,0.2))", border: "1px solid rgba(255,255,255,0.12)" }}>
-            <svg width="32" height="32" fill="none" viewBox="0 0 32 32">
-              <path d="M16 6C10.477 6 6 10.477 6 16s4.477 10 10 10 10-4.477 10-10S21.523 6 16 6z" stroke="#FF375F" strokeWidth="1.5" />
-              <path d="M16 11v5l3.5 3.5" stroke="#BF5AF2" strokeWidth="1.8" strokeLinecap="round" />
-              <path d="M10 16c0-3.314 2.686-6 6-6" stroke="#FF375F" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
+            <LogoMark size={34} color="#FF375F" />
           </div>
           <p className="text-[11px] font-bold tracking-[0.25em] uppercase mb-2"
             style={{ color: "rgba(255,255,255,0.3)" }}>

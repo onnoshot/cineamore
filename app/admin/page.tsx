@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { LogoMark } from "@/components/ui/logo-mark";
 
 const SESSION_KEY = "cineamore_admin_pw";
 
@@ -112,7 +113,11 @@ function LoginScreen({ password, setPassword, error, checking, onLogin }: {
       <motion.div initial={{ opacity: 0, y: 24, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
         className="glass-strong rounded-[28px] p-8 w-full max-w-sm mx-5 flex flex-col gap-6">
-        <div className="text-center">
+        <div className="text-center flex flex-col items-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-[20px] mb-4"
+            style={{ background: "linear-gradient(135deg, rgba(255,55,95,0.2), rgba(191,90,242,0.2))", border: "1px solid rgba(255,255,255,0.12)" }}>
+            <LogoMark size={30} color="#FF375F" />
+          </div>
           <p className="text-[12px] font-semibold tracking-[0.22em] uppercase mb-2" style={{ color: "rgba(255,255,255,0.3)" }}>CineAmore</p>
           <h1 className="text-[26px] font-bold text-white" style={{ letterSpacing: "-0.02em" }}>Admin Panel</h1>
         </div>
