@@ -78,15 +78,17 @@ export async function POST(req: NextRequest) {
         .webp({ quality: 88 })
         .toBuffer();
 
+      // Store in Supabase for later use (result page, finalize)
       const path = `jobs/${jobId}/${role}.webp`;
       const { error } = await supabaseAdmin.storage
         .from(BUCKET)
         .upload(path, resized, { contentType: "image/webp", upsert: true });
-
       if (error) throw new Error(`Upload error: ${error.message}`);
 
-      const { data } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
-      return data.publicUrl;
+      // Upload directly to Higgsfield so image_auto can access it as a reference
+      const { uploadImageToHiggsfield } = await import("@/lib/ai/higgsfield-client");
+      const higgsfieldMediaId = await uploadImageToHiggsfield(resized);
+      return higgsfieldMediaId;
     }
 
     const [manUrl, womanUrl] = await Promise.all([

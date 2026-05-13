@@ -156,6 +156,51 @@ export async function generateCharacterPortrait(
 }
 
 /**
+ * Upload an image buffer to Higgsfield and return the media ID.
+ * Uses the presigned-URL upload flow: media_upload → PUT → media_confirm.
+ */
+export async function uploadImageToHiggsfield(imageBuffer: Buffer): Promise<string> {
+  // Step 1: get presigned upload URL
+  const uploadText = await callMcpTool("media_upload", {
+    filename: "photo.webp",
+    content_type: "image/webp",
+  });
+
+  // Parse media_id and upload_url from the JSON response
+  let uploadUrl: string;
+  let mediaId: string;
+  try {
+    // The text may be raw JSON or embedded in a larger string
+    const jsonMatch = uploadText.match(/\{[\s\S]*"uploads"[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : uploadText) as {
+      uploads?: Array<{ upload_url: string; media_id: string }>;
+    };
+    uploadUrl = parsed.uploads![0].upload_url;
+    mediaId   = parsed.uploads![0].media_id;
+  } catch {
+    // Fallback: extract with regex
+    const u = uploadText.match(/"upload_url"\s*:\s*"([^"]+)"/);
+    const m = uploadText.match(/"media_id"\s*:\s*"([^"]+)"/);
+    if (!u || !m) throw new Error(`Could not parse media_upload: ${uploadText.slice(0, 200)}`);
+    uploadUrl = u[1];
+    mediaId   = m[1];
+  }
+
+  // Step 2: PUT bytes to presigned URL
+  const put = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": "image/webp" },
+    body: imageBuffer as unknown as BodyInit,
+  });
+  if (!put.ok) throw new Error(`Higgsfield media PUT failed: ${put.status}`);
+
+  // Step 3: confirm upload
+  await callMcpTool("media_confirm", { type: "image", media_id: mediaId });
+
+  return mediaId;
+}
+
+/**
  * Submit a scene image job (non-blocking).
  * Returns the Higgsfield job ID or a direct URL if the model responded synchronously.
  */

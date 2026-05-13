@@ -1,5 +1,6 @@
 {
   "functions": {
+    "app/api/prepare/route.ts": { "maxDuration": 60 },
     "app/api/generate-character/route.ts": { "maxDuration": 300 },
     "app/api/generate-image/route.ts": { "maxDuration": 300 },
     "app/api/generate-video/route.ts": { "maxDuration": 300 },
