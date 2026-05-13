@@ -155,10 +155,52 @@ function AuthContent() {
               {/* Trust row */}
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { icon: "🔒", label: "Güvenli", desc: "TLS şifreleme" },
-                  { icon: "🗑️", label: "Görseller Silinir", desc: "İletildikten sonra" },
-                  { icon: "💸", label: "İlk Video Ücretsiz", desc: "Kredi kartı yok" },
-                  { icon: "🛡️", label: "Paylaşılmaz", desc: "3. taraf yok" },
+                  {
+                    icon: (
+                      <svg width="16" height="16" fill="none" stroke="#30D158" strokeWidth="1.8" viewBox="0 0 24 24">
+                        <rect x="5" y="11" width="14" height="10" rx="2" />
+                        <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
+                      </svg>
+                    ),
+                    label: "Güvenli",
+                    desc: "TLS şifreleme",
+                  },
+                  {
+                    icon: (
+                      <svg width="16" height="16" fill="none" stroke="#FF9F0A" strokeWidth="1.8" viewBox="0 0 24 24">
+                        <polyline points="3 6 5 6 21 6" strokeLinecap="round" />
+                        <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" strokeLinecap="round" />
+                        <path d="M19 6l-1 14H6L5 6" strokeLinecap="round" strokeLinejoin="round" />
+                        <line x1="10" y1="11" x2="10" y2="17" strokeLinecap="round" />
+                        <line x1="14" y1="11" x2="14" y2="17" strokeLinecap="round" />
+                      </svg>
+                    ),
+                    label: "Görseller Silinir",
+                    desc: "İletildikten sonra",
+                  },
+                  {
+                    icon: (
+                      <svg width="16" height="16" fill="none" stroke="#BF5AF2" strokeWidth="1.8" viewBox="0 0 24 24">
+                        <path d="M20 12V22H4V12" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M22 7H2v5h20V7z" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M12 22V7" strokeLinecap="round" />
+                        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ),
+                    label: "İlk Video Ücretsiz",
+                    desc: "Kredi kartı yok",
+                  },
+                  {
+                    icon: (
+                      <svg width="16" height="16" fill="none" stroke="#FF375F" strokeWidth="1.8" viewBox="0 0 24 24">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ),
+                    label: "Paylaşılmaz",
+                    desc: "3. taraf yok",
+                  },
                 ].map((item, i) => (
                   <motion.div
                     key={i}
@@ -168,7 +210,10 @@ function AuthContent() {
                     className="rounded-[14px] px-3 py-2.5 flex items-center gap-2"
                     style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
                   >
-                    <span style={{ fontSize: 16 }}>{item.icon}</span>
+                    <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center"
+                      style={{ background: "rgba(255,255,255,0.06)" }}>
+                      {item.icon}
+                    </div>
                     <div>
                       <p className="text-[12px] font-semibold text-white/75">{item.label}</p>
                       <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>{item.desc}</p>
