@@ -1,21 +1,33 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { VideoPlayer } from "@/components/ui/video-player";
 import { ShareActions } from "@/components/result/share-actions";
-import { useGenerationStore } from "@/store/generation-store";
 import { hapticMedium } from "@/lib/utils/haptic";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ResultPage() {
   const router = useRouter();
-  const { finalVideoUrl, jobId, reset, phase } = useGenerationStore();
+  const params = useParams();
+  const jobId = params.id as string;
+
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!finalVideoUrl && phase !== "done") router.replace("/create");
-  }, [finalVideoUrl, phase, router]);
+    if (!jobId) { router.replace("/create"); return; }
+
+    fetch(`/api/result?jobId=${encodeURIComponent(jobId)}`)
+      .then((r) => r.json())
+      .then((d: { videoUrl?: string; error?: string }) => {
+        if (d.videoUrl) setVideoUrl(d.videoUrl);
+        else router.replace("/create");
+      })
+      .catch(() => router.replace("/create"))
+      .finally(() => setLoading(false));
+  }, [jobId, router]);
 
   const handleRestart = async () => {
     hapticMedium();
@@ -30,11 +42,18 @@ export default function ResultPage() {
         }
       }
     } catch { /* non-critical */ }
-    reset();
     router.push("/create");
   };
 
-  if (!finalVideoUrl) return null;
+  if (loading) {
+    return (
+      <div className="page" style={{ background: "#000", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="w-10 h-10 rounded-full border-2 border-white/10 border-t-white/60 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!videoUrl) return null;
 
   return (
     <div className="page">
@@ -45,7 +64,7 @@ export default function ResultPage() {
         transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
         className="absolute inset-0"
       >
-        <VideoPlayer src={finalVideoUrl} className="w-full h-full" autoPlay loop watermark="CineAmore" />
+        <VideoPlayer src={videoUrl} className="w-full h-full" autoPlay loop watermark="CineAmore" />
       </motion.div>
 
       {/* Top controls */}
@@ -106,7 +125,7 @@ export default function ResultPage() {
               İndir veya paylaş
             </motion.p>
           </div>
-          <ShareActions videoUrl={finalVideoUrl} />
+          <ShareActions videoUrl={videoUrl} />
         </div>
       </motion.div>
     </div>
