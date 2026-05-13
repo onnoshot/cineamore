@@ -5,14 +5,12 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FaceUploader } from "@/components/upload/face-uploader";
 import { Button } from "@/components/ui/button";
-import { useGenerationStore } from "@/store/generation-store";
 import { hapticMedium, hapticError } from "@/lib/utils/haptic";
 import { createClient } from "@/lib/supabase/client";
 import { useLang } from "@/lib/i18n/use-lang";
 
 export default function CreatePage() {
   const router = useRouter();
-  const { setRefs, setJobId, setPhase, setCity, setEmail, reset } = useGenerationStore();
   const supabase = createClient();
   const { t } = useLang();
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -38,7 +36,6 @@ export default function CreatePage() {
     hapticMedium();
     setUploading(true);
     setError(undefined);
-    reset();
 
     try {
       const form = new FormData();
@@ -47,7 +44,7 @@ export default function CreatePage() {
       if (userEmail) form.append("email", userEmail);
 
       const res = await fetch("/api/prepare", { method: "POST", body: form });
-      const data = await res.json();
+      const data = await res.json() as { jobId?: string; city?: string | null; error?: string };
 
       if (res.status === 402 && data.error === "credits_exhausted") {
         router.push("/credits");
@@ -55,13 +52,11 @@ export default function CreatePage() {
       }
       if (!res.ok) throw new Error(data.error ?? "Hazırlık hatası");
 
-      setJobId(data.jobId);
-      setRefs(data.manUrl, data.womanUrl);
-      setCity(data.city ?? null);
-      setEmail(userEmail);
-      setPhase("generating");
-
-      router.push("/create/generating");
+      // Pass state via URL — no Zustand, no hydration race condition
+      const params = new URLSearchParams({ jobId: data.jobId! });
+      if (data.city) params.set("city", data.city);
+      if (userEmail) params.set("email", userEmail);
+      router.push(`/create/generating?${params.toString()}`);
     } catch (err: unknown) {
       hapticError();
       setError(err instanceof Error ? err.message : "Bir sorun çıktı, tekrar deneyelim.");

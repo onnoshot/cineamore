@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useMemo, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGenerationStore, type SceneState } from "@/store/generation-store";
 import { Button } from "@/components/ui/button";
 
-/* ─── Scene metadata ─── */
+/* ─── Types ─── */
+type SceneStatus = "idle" | "generating-image" | "generating-video" | "done" | "error";
+interface SceneState {
+  imageUrl?: string;
+  videoUrl?: string;
+  status: SceneStatus;
+  error?: string;
+}
+
+/* ─── Constants ─── */
 const SCENE_INFO = [
   { name: "Kaçış",    sub: "Çöl koşusu" },
   { name: "Dokunuş", sub: "Dönüşüm anı" },
@@ -15,28 +23,25 @@ const SCENE_INFO = [
 ] as const;
 
 const STAGE_META = {
-  images:     { label: "SAHNELER TASARLANIYOR", colors: ["#BF5AF2", "#0A84FF"] as [string,string] },
-  videos:     { label: "SAHNELER CANLANDIRILIYOR", colors: ["#FF375F", "#BF5AF2"] as [string,string] },
-  finalizing: { label: "FİLM BİRLEŞTİRİLİYOR",   colors: ["#FF9F0A", "#FF375F"] as [string,string] },
+  images:     { label: "SAHNELER TASARLANIYOR",  colors: ["#BF5AF2", "#0A84FF"] as [string, string] },
+  videos:     { label: "SAHNELER CANLANDIRILIYOR", colors: ["#FF375F", "#BF5AF2"] as [string, string] },
+  finalizing: { label: "FİLM BİRLEŞTİRİLİYOR",   colors: ["#FF9F0A", "#FF375F"] as [string, string] },
 };
 
+const DEFAULT_SCENES: SceneState[] = [
+  { status: "idle" }, { status: "idle" }, { status: "idle" }, { status: "idle" },
+];
+
 /* ─── Helpers ─── */
-function calcProgress(scenes: SceneState[], phase: string): number {
+function calcProgress(scenes: SceneState[], finalizing: boolean): number {
   let p = 0;
   scenes.forEach((s) => {
     if (s.status === "generating-image") p += 5;
     else if (s.status === "generating-video") p += 15;
     else if (s.status === "done") p += 22;
   });
-  if (phase === "finalizing") p = Math.max(p, 90);
+  if (finalizing) p = Math.max(p, 90);
   return Math.min(Math.round(p), 99);
-}
-
-function getStage(scenes: SceneState[], phase: string): "images" | "videos" | "finalizing" {
-  if (phase === "finalizing") return "finalizing";
-  return scenes.some((s) => s.status === "generating-video" || s.status === "done")
-    ? "videos"
-    : "images";
 }
 
 function fmt(sec: number) {
@@ -45,57 +50,65 @@ function fmt(sec: number) {
 }
 
 /* ══════════════════════════════════════════════════════
-   PAGE
+   INNER COMPONENT — reads URL params
 ══════════════════════════════════════════════════════ */
-export default function GeneratingPage() {
+function GeneratingContent() {
   const router = useRouter();
-  const {
-    scenes, phase, finalVideoUrl, overallError, jobId,
-    manRef, womanRef, city, email,
-    updateScene, setFinalVideoUrl, setOverallError, setPhase,
-  } = useGenerationStore();
+  const searchParams = useSearchParams();
 
-  const startTimeRef = useRef<number | null>(null);
+  const jobId  = searchParams.get("jobId");
+  const city   = searchParams.get("city") || null;
+  const email  = searchParams.get("email") || null;
+
+  const [scenes, setScenes] = useState<SceneState[]>(DEFAULT_SCENES.map(s => ({...s})));
+  const [finalizing, setFinalizing] = useState(false);
+  const [overallError, setOverallError] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
-  const pipelineRef = useRef(false);
-  // Wait for Zustand persist to hydrate from localStorage before acting on state.
-  // Using a short timeout is more reliable than hasHydrated() across SSR/hydration cycles.
-  const [hydrated, setHydrated] = useState(false);
+  const startTimeRef = useRef<number | null>(null);
+  const pipelineRef  = useRef(false);
+
+  const updateScene = (i: number, update: Partial<SceneState>) =>
+    setScenes(prev => {
+      const next = [...prev] as SceneState[];
+      next[i] = { ...next[i], ...update };
+      return next;
+    });
+
+  /* ── Redirect if no jobId ── */
   useEffect(() => {
-    const t = setTimeout(() => setHydrated(true), 150);
-    return () => clearTimeout(t);
-  }, []);
+    if (!jobId) router.replace("/create");
+  }, [jobId, router]);
 
   /* ── Pipeline ── */
   useEffect(() => {
-    if (!hydrated) return;
-    if (!jobId || !manRef || !womanRef) return;
-    if (phase !== "generating") return;
-    if (pipelineRef.current) return;
-    if (scenes.some((s) => s.status !== "idle")) return;
+    if (!jobId || pipelineRef.current) return;
     pipelineRef.current = true;
     startTimeRef.current = Date.now();
 
+    const origin  = window.location.origin;
+    const manUrl  = `${origin}/api/img/${jobId}/man`;
+    const womanUrl = `${origin}/api/img/${jobId}/woman`;
+
     (async () => {
       try {
+        /* -- helper: poll until Higgsfield job finishes -- */
         async function waitForJob(higgsfieldJobId: string, label: string): Promise<string> {
           for (let attempt = 0; attempt < 120; attempt++) {
             await new Promise((r) => setTimeout(r, attempt < 6 ? 5000 : 8000));
             const pr = await fetch("/api/poll-job", {
-              method: "POST", headers: { "Content-Type": "application/json" },
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ higgsfieldJobId }),
             });
-            if (!pr.ok) {
-              const pd = await pr.json().catch(() => ({})) as { error?: string };
-              throw new Error(pd.error ?? `${label} poll ${pr.status}`);
-            }
             const pd = await pr.json() as { done?: boolean; failed?: boolean; url?: string; error?: string };
+            if (!pr.ok) throw new Error(pd.error ?? `${label} poll ${pr.status}`);
             if (pd.failed) throw new Error(`${label} başarısız`);
             if (pd.done && pd.url) return pd.url;
           }
-          throw new Error(`${label} zaman aşımı (120 deneme)`);
+          throw new Error(`${label} zaman aşımı`);
         }
 
+        /* STEP 1 — submit all 4 image jobs */
         updateScene(0, { status: "generating-image" });
         updateScene(1, { status: "generating-image" });
         updateScene(2, { status: "generating-image" });
@@ -104,46 +117,54 @@ export default function GeneratingPage() {
         const imageResults = await Promise.all(
           [0, 1, 2, 3].map(async (i) => {
             const res = await fetch("/api/generate-image", {
-              method: "POST", headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ sceneIndex: i, manUrl: manRef, womanUrl: womanRef, city }),
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ sceneIndex: i, manUrl, womanUrl, city }),
             });
-            const data = await res.json();
+            const data = await res.json() as { imageUrl?: string; higgsfieldJobId?: string; error?: string };
             if (!res.ok) throw new Error(data.error ?? `Sahne ${i + 1} görsel hatası`);
-            const imageUrl: string = data.imageUrl ?? await waitForJob(data.higgsfieldJobId, `Sahne ${i + 1} görsel`);
+
+            const imageUrl = data.imageUrl ?? await waitForJob(data.higgsfieldJobId!, `Sahne ${i + 1} görsel`);
             updateScene(i, { status: "generating-video", imageUrl });
             return imageUrl;
           })
         );
 
+        /* STEP 2 — submit all 4 video jobs */
         const videoUrls: string[] = new Array(4);
         await Promise.all(
           imageResults.map(async (imageUrl, i) => {
             const res = await fetch("/api/generate-video", {
-              method: "POST", headers: { "Content-Type": "application/json" },
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ sceneIndex: i, imageUrl, city }),
             });
-            const data = await res.json();
+            const data = await res.json() as { videoUrl?: string; higgsfieldJobId?: string; error?: string };
             if (!res.ok) throw new Error(data.error ?? `Sahne ${i + 1} video hatası`);
-            const videoUrl: string = data.videoUrl ?? await waitForJob(data.higgsfieldJobId, `Sahne ${i + 1} video`);
+
+            const videoUrl = data.videoUrl ?? await waitForJob(data.higgsfieldJobId!, `Sahne ${i + 1} video`);
             videoUrls[i] = videoUrl;
             updateScene(i, { status: "done", videoUrl });
           })
         );
 
-        setPhase("finalizing");
+        /* STEP 3 — finalize */
+        setFinalizing(true);
         const res = await fetch("/api/finalize", {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ jobId, videoUrls, email }),
         });
-        const data = await res.json();
+        const data = await res.json() as { finalVideoUrl?: string; error?: string };
         if (!res.ok) throw new Error(data.error ?? "Birleştirme hatası");
-        setFinalVideoUrl(data.finalVideoUrl);
+
+        router.replace(`/create/${jobId}`);
       } catch (err: unknown) {
         setOverallError(err instanceof Error ? err.message : "Bir hata oluştu");
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, jobId, manRef, womanRef, phase]);
+  }, [jobId]);
 
   /* ── Timer ── */
   useEffect(() => {
@@ -154,26 +175,17 @@ export default function GeneratingPage() {
     return () => clearInterval(id);
   }, []);
 
-  const progress = calcProgress(scenes, phase);
-  const stage    = getStage(scenes, phase);
-  const meta     = STAGE_META[stage];
+  const progress = calcProgress(scenes, finalizing);
+  const stage: "images" | "videos" | "finalizing" = finalizing ? "finalizing"
+    : scenes.some((s) => s.status === "generating-video" || s.status === "done") ? "videos"
+    : "images";
+  const meta = STAGE_META[stage];
 
   const remainingSec = useMemo(() => {
     if (progress < 8 || elapsed < 20) return null;
     const r = Math.round((elapsed * (100 - progress)) / Math.max(progress, 1));
     return r > 5 ? r : null;
   }, [progress, elapsed]);
-
-  /* ── Navigation ── */
-  useEffect(() => {
-    if (phase === "done" && finalVideoUrl && jobId) router.replace(`/create/${jobId}`);
-  }, [phase, finalVideoUrl, jobId, router]);
-
-  // Only redirect to /create after store has hydrated — avoids race condition where
-  // default "idle" phase triggers redirect before persisted "generating" state loads
-  useEffect(() => {
-    if (hydrated && phase === "idle") router.replace("/create");
-  }, [hydrated, phase, router]);
 
   if (overallError) {
     return (
@@ -185,60 +197,42 @@ export default function GeneratingPage() {
 
   return (
     <div className="page" style={{ background: "#000", overflow: "hidden" }}>
-
-      {/* ── Ambient blobs ── */}
       <AmbientBackground stage={stage} />
 
       <div className="relative z-10 flex flex-col items-center flex-1 px-5 safe-top pt-6 pb-8 w-full max-w-sm mx-auto overflow-y-auto">
 
-        {/* ── Status label ── */}
+        {/* Status label */}
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="flex items-center gap-2 mb-6"
         >
-          <motion.span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ background: meta.colors[0] }}
+          <motion.span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.colors[0] }}
             animate={{ opacity: [1, 0.2, 1], scale: [1, 1.8, 1] }}
-            transition={{ duration: 1.6, repeat: Infinity }}
-          />
+            transition={{ duration: 1.6, repeat: Infinity }} />
           <AnimatePresence mode="wait">
-            <motion.span
-              key={stage}
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 6 }}
+            <motion.span key={stage}
+              initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
               transition={{ duration: 0.3 }}
               className="text-[10px] font-black tracking-[0.16em]"
-              style={{ color: "rgba(255,255,255,0.28)" }}
-            >
+              style={{ color: "rgba(255,255,255,0.28)" }}>
               {meta.label}
             </motion.span>
           </AnimatePresence>
-          <motion.span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ background: meta.colors[0] }}
+          <motion.span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.colors[0] }}
             animate={{ opacity: [1, 0.2, 1], scale: [1, 1.8, 1] }}
-            transition={{ duration: 1.6, repeat: Infinity, delay: 0.8 }}
-          />
+            transition={{ duration: 1.6, repeat: Infinity, delay: 0.8 }} />
         </motion.div>
 
-        {/* ── Hero: progress ring ── */}
+        {/* Progress ring */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
           className="flex flex-col items-center mb-2"
         >
           <ProgressRing progress={progress} colors={meta.colors} />
-
-          {/* Title under ring */}
-          <h1
-            className="font-black text-white/90 text-center mt-4"
-            style={{ fontSize: 22, letterSpacing: "-0.025em", lineHeight: 1.15 }}
-          >
+          <h1 className="font-black text-white/90 text-center mt-4"
+            style={{ fontSize: 22, letterSpacing: "-0.025em", lineHeight: 1.15 }}>
             Hikayeniz Hazırlanıyor
           </h1>
           <p className="text-[12px] mt-1 text-center" style={{ color: "rgba(255,255,255,0.28)" }}>
@@ -246,46 +240,27 @@ export default function GeneratingPage() {
           </p>
         </motion.div>
 
-        {/* ── Time row ── */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="flex items-center justify-between w-full px-1 mb-4"
-        >
+        {/* Time row */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+          className="flex items-center justify-between w-full px-1 mb-4">
           <span className="text-[12px] tabular-nums" style={{ color: "rgba(255,255,255,0.22)" }}>
             {elapsed > 0 ? `${fmt(elapsed)} geçti` : "başlıyor…"}
           </span>
-          <AnimatePresence mode="wait">
-            {remainingSec != null ? (
-              <motion.span
-                key={Math.floor(remainingSec / 15)}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-[12px] tabular-nums"
-                style={{ color: "rgba(255,255,255,0.22)" }}
-              >
-                ~{fmt(remainingSec)} kaldı
-              </motion.span>
-            ) : (
-              <span style={{ color: "rgba(255,255,255,0.1)", fontSize: 12 }}>—</span>
-            )}
-          </AnimatePresence>
+          {remainingSec != null && (
+            <span className="text-[12px] tabular-nums" style={{ color: "rgba(255,255,255,0.22)" }}>
+              ~{fmt(remainingSec)} kaldı
+            </span>
+          )}
         </motion.div>
 
-        {/* ── Stage pills ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
+        {/* Stage pills */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="flex items-center gap-2 w-full mb-5"
-        >
+          className="flex items-center gap-2 w-full mb-5">
           {(["images", "videos", "finalizing"] as const).map((s, i) => {
             const isActive = stage === s;
-            const isPast =
-              (s === "images" && (stage === "videos" || stage === "finalizing")) ||
-              (s === "videos" && stage === "finalizing");
+            const isPast = (s === "images" && (stage === "videos" || stage === "finalizing"))
+              || (s === "videos" && stage === "finalizing");
             const LABELS = { images: "Görseller", videos: "Videolar", finalizing: "Birleştirme" };
             return (
               <div key={s} className="flex items-center gap-2 flex-1">
@@ -316,28 +291,18 @@ export default function GeneratingPage() {
           })}
         </motion.div>
 
-        {/* ── Scene cards ── */}
+        {/* Scene cards */}
         <div className="w-full flex flex-col gap-2.5">
           {scenes.map((s, i) => (
             <SceneCard key={i} index={i} scene={s} stageColors={meta.colors} />
           ))}
         </div>
 
-        {/* ── Email notice ── */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="w-full mt-auto pt-5 safe-bottom"
-        >
-          <div
-            className="rounded-[18px] px-4 py-3.5 flex items-center gap-3"
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              backdropFilter: "blur(20px)",
-            }}
-          >
+        {/* Email notice */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
+          className="w-full mt-auto pt-5 safe-bottom">
+          <div className="rounded-[18px] px-4 py-3.5 flex items-center gap-3"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(20px)" }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
               style={{ background: "rgba(10,132,255,0.1)" }}>
               <svg width="14" height="14" fill="none" stroke="#0A84FF" strokeWidth="2" viewBox="0 0 24 24">
@@ -346,28 +311,34 @@ export default function GeneratingPage() {
               </svg>
             </div>
             <div>
-              <p className="text-[12px] font-semibold" style={{ color: "rgba(255,255,255,0.75)" }}>
-                Sekmeyi açık tutun
-              </p>
-              <p className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>
-                Bitince e-postanıza göndereceğiz
-              </p>
+              <p className="text-[12px] font-semibold" style={{ color: "rgba(255,255,255,0.75)" }}>Sekmeyi açık tutun</p>
+              <p className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>Bitince e-postanıza göndereceğiz</p>
             </div>
           </div>
         </motion.div>
-
       </div>
     </div>
   );
 }
 
+/* ══════════════════════════════════════════════════════
+   PAGE EXPORT — Suspense boundary for useSearchParams
+══════════════════════════════════════════════════════ */
+export default function GeneratingPage() {
+  return (
+    <Suspense fallback={<div className="page" style={{ background: "#000" }} />}>
+      <GeneratingContent />
+    </Suspense>
+  );
+}
+
 /* ──────────────────────────────────────────
-   Ambient background blobs
+   Ambient blobs
 ────────────────────────────────────────── */
 function AmbientBackground({ stage }: { stage: string }) {
   const configs = {
     images:     [
-      { color: "rgba(191,90,242,0.13)", x: "-20%", y: "-10%",  size: "70%", dur: 18 },
+      { color: "rgba(191,90,242,0.13)", x: "-20%", y: "-10%", size: "70%", dur: 18 },
       { color: "rgba(10,132,255,0.09)", x: "50%",  y: "40%",  size: "55%", dur: 22 },
       { color: "rgba(255,55,95,0.06)",  x: "10%",  y: "65%",  size: "45%", dur: 26 },
     ],
@@ -383,29 +354,14 @@ function AmbientBackground({ stage }: { stage: string }) {
     ],
   };
   const blobs = configs[stage as keyof typeof configs] ?? configs.images;
-
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {blobs.map((b, i) => (
-        <motion.div
-          key={`${stage}-${i}`}
-          className="absolute rounded-full"
-          style={{
-            width: b.size, height: b.size,
-            left: b.x, top: b.y,
-            background: `radial-gradient(circle, ${b.color} 0%, transparent 70%)`,
-            filter: "blur(40px)",
-          }}
-          animate={{
-            x: [0, 24, -16, 0],
-            y: [0, -20, 12, 0],
-          }}
-          transition={{
-            duration: b.dur,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: i * 3,
-          }}
+        <motion.div key={`${stage}-${i}`} className="absolute rounded-full"
+          style={{ width: b.size, height: b.size, left: b.x, top: b.y,
+            background: `radial-gradient(circle, ${b.color} 0%, transparent 70%)`, filter: "blur(40px)" }}
+          animate={{ x: [0, 24, -16, 0], y: [0, -20, 12, 0] }}
+          transition={{ duration: b.dur, repeat: Infinity, ease: "easeInOut", delay: i * 3 }}
         />
       ))}
     </div>
@@ -413,67 +369,48 @@ function AmbientBackground({ stage }: { stage: string }) {
 }
 
 /* ──────────────────────────────────────────
-   Circular progress ring
+   Progress ring
 ────────────────────────────────────────── */
 function ProgressRing({ progress, colors }: { progress: number; colors: [string, string] }) {
   const r = 62;
   const circ = 2 * Math.PI * r;
   const offset = circ - (progress / 100) * circ;
-  const gradId = "pg";
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: 170, height: 170 }}>
-      {/* Glow */}
-      <motion.div
-        className="absolute rounded-full pointer-events-none"
+      <motion.div className="absolute rounded-full pointer-events-none"
         style={{ inset: 16, background: `radial-gradient(circle, ${colors[0]}22, transparent 70%)`, filter: "blur(18px)" }}
-        animate={{ opacity: [0.6, 1, 0.6] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-      />
+        animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
 
       <svg width="170" height="170" viewBox="0 0 170 170" style={{ transform: "rotate(-90deg)" }}>
         <defs>
-          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id="pgr" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%"   stopColor={colors[0]} />
             <stop offset="100%" stopColor={colors[1]} />
           </linearGradient>
         </defs>
-        {/* Track */}
-        <circle cx="85" cy="85" r={r} fill="none"
-          stroke="rgba(255,255,255,0.05)" strokeWidth="5" />
-        {/* Fill */}
+        <circle cx="85" cy="85" r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="5" />
         <motion.circle cx="85" cy="85" r={r} fill="none"
-          stroke={`url(#${gradId})`} strokeWidth="5"
-          strokeLinecap="round"
+          stroke="url(#pgr)" strokeWidth="5" strokeLinecap="round"
           strokeDasharray={circ}
           animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.4, ease: [0.32, 0.72, 0, 1] }}
-        />
-        {/* Dot at tip */}
+          transition={{ duration: 1.4, ease: [0.32, 0.72, 0, 1] }} />
         {progress > 3 && (
-          <motion.circle
+          <circle
             cx={85 + r * Math.cos((-90 + 360 * progress / 100) * Math.PI / 180)}
             cy={85 + r * Math.sin((-90 + 360 * progress / 100) * Math.PI / 180)}
-            r="4" fill={colors[1]}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          />
+            r="4" fill={colors[1]} />
         )}
       </svg>
 
-      {/* Centre number */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="flex items-end">
           <AnimatePresence mode="wait">
-            <motion.span
-              key={progress}
-              initial={{ opacity: 0, scale: 0.75, y: -6 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 1.1 }}
-              transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+            <motion.span key={progress}
+              initial={{ opacity: 0, scale: 0.75, y: -6 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 1.1 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
               className="tabular-nums font-black"
-              style={{ fontSize: 48, lineHeight: 1, letterSpacing: "-0.05em", color: "rgba(255,255,255,0.95)" }}
-            >
+              style={{ fontSize: 48, lineHeight: 1, letterSpacing: "-0.05em", color: "rgba(255,255,255,0.95)" }}>
               {progress}
             </motion.span>
           </AnimatePresence>
@@ -493,20 +430,16 @@ function SceneCard({ index, scene, stageColors }: {
   const { status, error } = scene;
   const info = SCENE_INFO[index];
   const isProcessing = status === "generating-image" || status === "generating-video";
-
   const stateColor =
     status === "done"             ? "#30D158" :
     status === "generating-video" ? "#BF5AF2" :
     status === "generating-image" ? "#0A84FF" :
-    status === "error"            ? "#FF453A" :
-                                    "rgba(255,255,255,0.14)";
-
+    status === "error"            ? "#FF453A" : "rgba(255,255,255,0.14)";
   const statusLabel =
     status === "done"             ? "Hazır ✓" :
     status === "generating-video" ? "Video oluşturuluyor" :
     status === "generating-image" ? "Görsel oluşturuluyor" :
-    status === "error"            ? "Hata" :
-                                    "Sırada";
+    status === "error"            ? (error ?? "Hata") : "Sırada";
 
   return (
     <motion.div
@@ -514,47 +447,25 @@ function SceneCard({ index, scene, stageColors }: {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay: index * 0.07, duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
       style={{
-        background:
-          status === "done"  ? "rgba(48,209,88,0.05)"  :
-          status === "error" ? "rgba(255,69,58,0.05)"   :
-          isProcessing       ? `${stateColor}0A`         :
-                               "rgba(255,255,255,0.03)",
-        border: `1px solid ${
-          status === "done"  ? "rgba(48,209,88,0.2)"  :
-          status === "error" ? "rgba(255,69,58,0.2)"  :
-          isProcessing       ? `${stateColor}35`       :
-                               "rgba(255,255,255,0.07)"
-        }`,
+        background: status === "done" ? "rgba(48,209,88,0.05)" : status === "error" ? "rgba(255,69,58,0.05)" : isProcessing ? `${stateColor}0A` : "rgba(255,255,255,0.03)",
+        border: `1px solid ${status === "done" ? "rgba(48,209,88,0.2)" : status === "error" ? "rgba(255,69,58,0.2)" : isProcessing ? `${stateColor}35` : "rgba(255,255,255,0.07)"}`,
         backdropFilter: "blur(16px)",
         borderRadius: 18,
         padding: "14px 16px",
-        transition: "background 0.6s ease, border-color 0.6s ease",
         overflow: "hidden",
         position: "relative",
+        transition: "background 0.6s ease, border-color 0.6s ease",
       }}
     >
-      {/* Shimmer bg when active */}
       {isProcessing && (
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: `linear-gradient(105deg, transparent 30%, ${stateColor}08 50%, transparent 70%)`,
-          }}
+        <motion.div className="absolute inset-0 pointer-events-none"
+          style={{ background: `linear-gradient(105deg, transparent 30%, ${stateColor}08 50%, transparent 70%)` }}
           animate={{ x: ["-100%", "200%"] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: "linear", repeatDelay: 0.8 }}
-        />
+          transition={{ duration: 2.4, repeat: Infinity, ease: "linear", repeatDelay: 0.8 }} />
       )}
-
       <div className="relative flex items-center gap-3">
-        {/* Badge */}
         <motion.div
-          style={{
-            width: 38, height: 38, borderRadius: "50%",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
-            background: `${stateColor}14`,
-            border: `1.5px solid ${stateColor}38`,
-          }}
+          style={{ width: 38, height: 38, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: `${stateColor}14`, border: `1.5px solid ${stateColor}38` }}
           animate={isProcessing ? { boxShadow: [`0 0 0 0px ${stateColor}30`, `0 0 0 7px transparent`] } : {}}
           transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
         >
@@ -576,7 +487,6 @@ function SceneCard({ index, scene, stageColors }: {
           )}
         </motion.div>
 
-        {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <span className="font-semibold"
@@ -593,26 +503,19 @@ function SceneCard({ index, scene, stageColors }: {
               </motion.span>
             </AnimatePresence>
           </div>
-
           <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 1 }}>{info.sub}</p>
-
-          {/* Progress bar */}
           <div style={{ height: 2, background: "rgba(255,255,255,0.05)", borderRadius: 2, marginTop: 9, overflow: "hidden", position: "relative" }}>
             {status === "generating-image" && (
-              <motion.div style={{ position: "absolute", top: 0, height: "100%", width: "40%", borderRadius: 2,
-                background: `linear-gradient(90deg, transparent, ${stateColor}, transparent)` }}
-                animate={{ x: ["-40%", "340%"] }}
-                transition={{ duration: 1.4, repeat: Infinity, ease: "linear" }} />
+              <motion.div style={{ position: "absolute", top: 0, height: "100%", width: "40%", borderRadius: 2, background: `linear-gradient(90deg, transparent, ${stateColor}, transparent)` }}
+                animate={{ x: ["-40%", "340%"] }} transition={{ duration: 1.4, repeat: Infinity, ease: "linear" }} />
             )}
             {status === "generating-video" && (
               <motion.div style={{ position: "absolute", top: 0, left: 0, height: "100%", borderRadius: 2, background: stateColor, opacity: 0.65 }}
-                animate={{ width: ["15%", "75%", "15%"] }}
-                transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }} />
+                animate={{ width: ["15%", "75%", "15%"] }} transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }} />
             )}
             {status === "done" && (
               <motion.div style={{ height: "100%", borderRadius: 2, background: stateColor, opacity: 0.55 }}
-                initial={{ width: "0%" }} animate={{ width: "100%" }}
-                transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }} />
+                initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }} />
             )}
             {status === "error" && (
               <div style={{ height: "100%", width: "100%", borderRadius: 2, background: stateColor, opacity: 0.4 }} />
@@ -620,12 +523,6 @@ function SceneCard({ index, scene, stageColors }: {
           </div>
         </div>
       </div>
-
-      {error && (
-        <p style={{ fontSize: 10, color: "rgba(255,69,58,0.5)", marginTop: 6, paddingLeft: 50, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {error}
-        </p>
-      )}
     </motion.div>
   );
 }
@@ -642,8 +539,7 @@ function ErrorState({ error, onRetry }: { error: string; onRetry: () => void }) 
         className="rounded-full flex items-center justify-center"
         style={{ width: 64, height: 64, background: "rgba(255,69,58,0.12)", border: "1px solid rgba(255,69,58,0.25)" }}>
         <svg width="26" height="26" fill="none" stroke="#FF453A" strokeWidth="2" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M15 9l-6 6M9 9l6 6" strokeLinecap="round" />
+          <circle cx="12" cy="12" r="10" /><path d="M15 9l-6 6M9 9l6 6" strokeLinecap="round" />
         </svg>
       </motion.div>
       <div>
