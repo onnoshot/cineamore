@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ProgressOrchestrator } from "@/components/generation/progress-orchestrator";
 import { useGenerationStore, type SceneState } from "@/store/generation-store";
 import { Button } from "@/components/ui/button";
 import { useLang } from "@/lib/i18n/use-lang";
@@ -34,7 +33,10 @@ function formatRemaining(seconds: number): string {
 export default function GeneratingPage() {
   const router = useRouter();
   const { t } = useLang();
-  const { scenes, phase, finalVideoUrl, overallError, jobId } = useGenerationStore();
+  const {
+    scenes, phase, finalVideoUrl, overallError, jobId,
+    updateScene, setFinalVideoUrl, setOverallError, setPhase,
+  } = useGenerationStore();
 
   function phaseLabel(ph: string, completed: number): string {
     if (ph === "finalizing") return t.generating.finalizing;
@@ -60,6 +62,55 @@ export default function GeneratingPage() {
   const [tabWarning, setTabWarning] = useState(false);
   const startTimeRef = useRef<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
+
+  // Poll job status from server every 4 seconds
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const pollJobStatus = useCallback(async () => {
+    if (!jobId) return;
+    try {
+      const res = await fetch(`/api/job-status/${jobId}`);
+      if (!res.ok) return;
+      const job = await res.json() as {
+        status: string;
+        scenes: SceneState[];
+        final_video_url?: string;
+        error?: string;
+      };
+
+      // Sync scenes from server
+      job.scenes?.forEach((s: SceneState, i: number) => updateScene(i, s));
+
+      if (job.status === "done" && job.final_video_url) {
+        setFinalVideoUrl(job.final_video_url);
+        // navigate handled by existing effect below
+      } else if (job.status === "error" && job.error) {
+        setOverallError(job.error);
+      } else if (job.status === "finalizing") {
+        setPhase("finalizing");
+      } else if (
+        job.status === "generating_images" ||
+        job.status === "generating_videos" ||
+        job.status === "pending"
+      ) {
+        setPhase("generating");
+      }
+    } catch { /* network glitch — retry next tick */ }
+  }, [jobId, updateScene, setFinalVideoUrl, setOverallError, setPhase]);
+
+  useEffect(() => {
+    if (!jobId || phase === "idle") return;
+    pollJobStatus(); // immediate first poll
+    pollRef.current = setInterval(pollJobStatus, 4000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [jobId, phase, pollJobStatus]);
+
+  // Stop polling when done or error
+  useEffect(() => {
+    if (phase === "done" || overallError) {
+      if (pollRef.current) clearInterval(pollRef.current);
+    }
+  }, [phase, overallError]);
 
   const completedScenes = scenes.filter((s) => s.status === "done").length;
   const isActive = phase === "generating" || phase === "finalizing";
@@ -139,8 +190,6 @@ export default function GeneratingPage() {
         }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
       />
-
-      {isActive && <ProgressOrchestrator />}
 
       {/* Tab warning */}
       <AnimatePresence>

@@ -59,6 +59,20 @@ export default function CreatePage() {
       setRefs(data.manUrl, data.womanUrl);
       setCity(data.city ?? null);
       setPhase("generating");
+
+      // Start server-side pipeline (fire and forget — tab can be closed)
+      fetch("/api/run-job", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId: data.jobId,
+          manUrl: data.manUrl,
+          womanUrl: data.womanUrl,
+          city: data.city ?? null,
+          email: userEmail,
+        }),
+      }).catch(() => {}); // errors handled server-side; client polls job-status
+
       router.push("/create/generating");
     } catch (err: unknown) {
       hapticError();
