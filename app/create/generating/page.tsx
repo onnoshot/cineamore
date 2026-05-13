@@ -55,7 +55,6 @@ export default function GeneratingPage() {
   const startTimeRef = useRef<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const pipelineRef = useRef(false);
-  const [preparingChars, setPreparingChars] = useState(false);
 
   /* ── Client-side pipeline ── */
   useEffect(() => {
@@ -64,32 +63,11 @@ export default function GeneratingPage() {
     if (pipelineRef.current) return;
     if (scenes.some((s) => s.status !== "idle")) return;
     pipelineRef.current = true;
+    startTimeRef.current = Date.now();
 
     (async () => {
       try {
-        // Step 0: Generate soul_2 character portraits for face identity (parallel)
-        setPreparingChars(true);
-        const [manPortraitJobId, womanPortraitJobId] = await Promise.all([
-          fetch("/api/generate-character", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ photoUrl: manRef }),
-          }).then((r) => r.json()).then((d) => {
-            if (!d.portraitJobId) throw new Error(d.error ?? "Erkek portresi hatası");
-            return d.portraitJobId as string;
-          }),
-          fetch("/api/generate-character", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ photoUrl: womanRef }),
-          }).then((r) => r.json()).then((d) => {
-            if (!d.portraitJobId) throw new Error(d.error ?? "Kadın portresi hatası");
-            return d.portraitJobId as string;
-          }),
-        ]);
-        setPreparingChars(false);
-
-        // Step 1: 4 scene images in parallel (using portrait job IDs as face references)
+        // Step 1: 4 scene images in parallel (using signed photo URLs as face references)
         const imageUrls: string[] = new Array(4);
         await Promise.all(
           [0, 1, 2, 3].map(async (i) => {
@@ -97,7 +75,7 @@ export default function GeneratingPage() {
             const res = await fetch("/api/generate-image", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ jobId, sceneIndex: i, manUrl: manPortraitJobId, womanUrl: womanPortraitJobId, city }),
+              body: JSON.stringify({ jobId, sceneIndex: i, manUrl: manRef, womanUrl: womanRef, city }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error ?? `Sahne ${i + 1} görsel hatası`);
@@ -142,12 +120,6 @@ export default function GeneratingPage() {
 
   /* ── Timer ── */
   const isActive = phase === "generating" || phase === "finalizing";
-
-  useEffect(() => {
-    if (scenes.some((s) => s.status !== "idle") && !startTimeRef.current) {
-      startTimeRef.current = Date.now();
-    }
-  }, [scenes]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -371,33 +343,6 @@ export default function GeneratingPage() {
             })}
           </div>
         </motion.div>
-
-        {/* ── Character prep indicator ── */}
-        <AnimatePresence>
-          {preparingChars && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.3 }}
-              className="w-full rounded-[14px] px-4 py-3 flex items-center gap-3"
-              style={{
-                background: "rgba(191,90,242,0.07)",
-                border: "1px solid rgba(191,90,242,0.18)",
-              }}
-            >
-              <motion.div
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ background: "#BF5AF2" }}
-                animate={{ opacity: [1, 0.2, 1], scale: [1, 1.4, 1] }}
-                transition={{ duration: 1.2, repeat: Infinity }}
-              />
-              <span className="text-[13px]" style={{ color: "rgba(255,255,255,0.65)" }}>
-                Yüzler analiz ediliyor, karakterler hazırlanıyor…
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* ── Scene cards ── */}
         <div className="w-full flex flex-col gap-2">
