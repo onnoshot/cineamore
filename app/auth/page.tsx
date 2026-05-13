@@ -6,11 +6,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { hapticMedium, hapticSuccess, hapticError } from "@/lib/utils/haptic";
 import { LogoMark } from "@/components/ui/logo-mark";
+import { useLang } from "@/lib/i18n/use-lang";
 
 function AuthContent() {
   const router = useRouter();
   const params = useSearchParams();
   const supabase = createClient();
+  const { t } = useLang();
 
   const [email, setEmail] = useState("");
   const [step, setStep] = useState<"initial" | "email-sent" | "error">("initial");
@@ -94,10 +96,12 @@ function AuthContent() {
             <LogoMark size={34} color="#FF375F" />
           </div>
           <h1 className="text-[28px] font-bold text-white" style={{ letterSpacing: "-0.02em", lineHeight: 1.1 }}>
-            Aşk hikayeni<br />başlatmak için giriş yap
+            {t.auth.title.split("\n").map((line, i) => (
+              <span key={i}>{line}{i === 0 && <br />}</span>
+            ))}
           </h1>
           <p className="text-[14px] mt-2" style={{ color: "rgba(255,255,255,0.4)" }}>
-            Ücretsiz, 30 saniyede
+            {t.auth.subtitle}
           </p>
         </motion.div>
 
@@ -123,10 +127,10 @@ function AuthContent() {
                 </svg>
               </motion.div>
               <div>
-                <h2 className="text-[20px] font-bold text-white">Mail gönderildi</h2>
+                <h2 className="text-[20px] font-bold text-white">{t.auth.sentTitle}</h2>
                 <p className="text-[14px] mt-2 leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
-                  <span className="text-white/70 font-medium">{email}</span> adresine giriş bağlantısı gönderdik.
-                  <br />Spam klasörünü de kontrol et.
+                  <span className="text-white/70 font-medium">{email}</span>{" "}
+                  {t.auth.sentDesc}
                 </p>
               </div>
               <button
@@ -134,7 +138,7 @@ function AuthContent() {
                 className="text-[13px] cursor-pointer"
                 style={{ color: "rgba(255,255,255,0.35)" }}
               >
-                Farklı e-posta ile dene
+                {t.auth.sentBack}
               </button>
             </motion.div>
           ) : (
@@ -155,8 +159,6 @@ function AuthContent() {
                         <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
                       </svg>
                     ),
-                    label: "Güvenli",
-                    desc: "TLS şifreleme",
                   },
                   {
                     icon: (
@@ -168,8 +170,6 @@ function AuthContent() {
                         <line x1="14" y1="11" x2="14" y2="17" strokeLinecap="round" />
                       </svg>
                     ),
-                    label: "Görseller Silinir",
-                    desc: "İletildikten sonra",
                   },
                   {
                     icon: (
@@ -181,8 +181,6 @@ function AuthContent() {
                         <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     ),
-                    label: "İlk Video Ücretsiz",
-                    desc: "Kredi kartı yok",
                   },
                   {
                     icon: (
@@ -191,10 +189,8 @@ function AuthContent() {
                         <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     ),
-                    label: "Paylaşılmaz",
-                    desc: "3. taraf yok",
                   },
-                ].map((item, i) => (
+                ].map((item, i) => ({...item, label: t.auth.trust[i].label, desc: t.auth.trust[i].desc})).map((item, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, y: 8 }}
@@ -232,13 +228,13 @@ function AuthContent() {
                 ) : (
                   <GoogleIcon />
                 )}
-                Google ile Devam Et
+                {t.auth.googleBtn}
               </motion.button>
 
               {/* Divider */}
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.1)" }} />
-                <span className="text-[12px]" style={{ color: "rgba(255,255,255,0.3)" }}>veya e-posta ile</span>
+                <span className="text-[12px]" style={{ color: "rgba(255,255,255,0.3)" }}>{t.auth.orEmail}</span>
                 <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.1)" }} />
               </div>
 
@@ -253,7 +249,7 @@ function AuthContent() {
                   type="email"
                   inputMode="email"
                   autoComplete="email"
-                  placeholder="ornek@mail.com"
+                  placeholder={t.auth.emailPlaceholder}
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setErrorMsg(""); }}
                   onKeyDown={(e) => e.key === "Enter" && handleEmail()}
@@ -268,7 +264,7 @@ function AuthContent() {
                              cursor-pointer disabled:opacity-35 focus:outline-none"
                   style={{ background: "linear-gradient(135deg, #FF375F 0%, #BF5AF2 100%)" }}
                 >
-                  {loading === "email" ? "Gönderiliyor…" : "Giriş Bağlantısı Gönder"}
+                  {loading === "email" ? t.auth.emailBtnSending : t.auth.emailBtn}
                 </motion.button>
               </motion.div>
 
@@ -282,13 +278,13 @@ function AuthContent() {
                     className="text-center text-[13px]"
                     style={{ color: "#FF453A" }}
                   >
-                    {errorMsg || "Bir hata oluştu, tekrar dene"}
+                    {errorMsg || t.auth.errorDefault}
                   </motion.p>
                 )}
               </AnimatePresence>
 
               <p className="text-center text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.2)" }}>
-                Giriş yaparak gizlilik politikamızı kabul etmiş olursun.
+                {t.auth.footer}
               </p>
             </motion.div>
           )}

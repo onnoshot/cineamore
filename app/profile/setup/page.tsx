@@ -6,10 +6,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { hapticLight, hapticMedium, hapticSuccess, hapticError } from "@/lib/utils/haptic";
 import { LogoMark } from "@/components/ui/logo-mark";
+import { useLang } from "@/lib/i18n/use-lang";
 
 export default function ProfileSetupPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { t } = useLang();
 
   const [fullName, setFullName] = useState("");
   const [city, setCity] = useState("");
@@ -94,7 +96,7 @@ export default function ProfileSetupPage() {
             <LogoMark size={30} color="#FF375F" />
           </div>
           <h1 className="text-[26px] font-bold text-white" style={{ letterSpacing: "-0.02em" }}>
-            Profilini Tamamla
+            {t.setup.title}
           </h1>
           {userEmail && (
             <p className="text-[13px] mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>
@@ -111,23 +113,23 @@ export default function ProfileSetupPage() {
           className="glass-strong rounded-[24px] p-5 flex flex-col gap-4"
         >
           <Field
-            label="Ad Soyad"
-            placeholder="Adın ve soyadın"
+            label={t.setup.fullName}
+            placeholder={t.setup.fullNamePlaceholder}
             value={fullName}
             onChange={setFullName}
             autoComplete="name"
           />
           <div className="grid grid-cols-2 gap-3">
             <Field
-              label="Şehir"
-              placeholder="İstanbul"
+              label={t.setup.city}
+              placeholder={t.setup.cityPlaceholder}
               value={city}
               onChange={setCity}
               autoComplete="address-level2"
             />
             <Field
-              label="Doğum Yılı"
-              placeholder="1990"
+              label={t.setup.birthYear}
+              placeholder={t.setup.birthYearPlaceholder}
               value={birthYear}
               onChange={(v) => { if (/^\d{0,4}$/.test(v)) setBirthYear(v); }}
               inputMode="numeric"
@@ -157,7 +159,7 @@ export default function ProfileSetupPage() {
                      glow-pulse disabled:opacity-35 disabled:pointer-events-none cursor-pointer"
           style={{ background: "linear-gradient(135deg, #30D158 0%, #0A84FF 100%)" }}
         >
-          {loading ? "Kaydediliyor…" : "Devam Et"}
+          {loading ? t.setup.saveBtnLoading : t.setup.saveBtn}
         </motion.button>
 
         <p className="text-center text-[11px]" style={{ color: "rgba(255,255,255,0.2)" }}>

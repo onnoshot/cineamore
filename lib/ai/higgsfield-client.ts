@@ -14,20 +14,30 @@ function getToken(): string {
 
 /** POST to MCP and parse SSE response → returns tool result text */
 async function callMcpTool(name: string, args: Record<string, unknown>): Promise<string> {
-  const res = await fetch(MCP_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json, text/event-stream",
-      "Authorization": `Bearer ${getToken()}`,
-    },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      id: Date.now(),
-      method: "tools/call",
-      params: { name, arguments: args },
-    }),
-  });
+  const controller = new AbortController();
+  // 90s timeout: Higgsfield image gen takes ~15-30s; polling is handled separately
+  const timeoutId = setTimeout(() => controller.abort(), 90_000);
+
+  let res: Response;
+  try {
+    res = await fetch(MCP_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream",
+        "Authorization": `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: Date.now(),
+        method: "tools/call",
+        params: { name, arguments: args },
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!res.ok) {
     const body = await res.text();

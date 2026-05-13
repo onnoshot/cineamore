@@ -6,30 +6,17 @@ import { motion, AnimatePresence, useMotionValue } from "framer-motion";
 import { hapticMedium, hapticLight } from "@/lib/utils/haptic";
 import { createClient } from "@/lib/supabase/client";
 import { LogoMark } from "@/components/ui/logo-mark";
+import { useLang } from "@/lib/i18n/use-lang";
 
-const SLIDES = [
-  {
-    id: 0,
-    illustration: <SlideOneIllustration />,
-    title: "İki Fotoğraf",
-    sub: "İki yüz, sonsuz bir aşk hikayesi",
-  },
-  {
-    id: 1,
-    illustration: <SlideTwoIllustration />,
-    title: "En Güçlü AI",
-    sub: "Dünyanın en gelişmiş modelleri sahneye taşır",
-  },
-  {
-    id: 2,
-    illustration: <SlideThreeIllustration />,
-    title: "12 Saniye Aşk",
-    sub: "İndir, paylaş — bu an sonsuza kalsın",
-  },
+const SLIDE_ILLUSTRATIONS = [
+  <SlideOneIllustration key={0} />,
+  <SlideTwoIllustration key={1} />,
+  <SlideThreeIllustration key={2} />,
 ];
 
 export default function LandingPage() {
   const router = useRouter();
+  const { t } = useLang();
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(0);
   const supabase = createClient();
@@ -108,7 +95,9 @@ export default function LandingPage() {
             letterSpacing: "-0.01em",
           }}
         >
-          Video AI modeli ile sinematik<br />aşk hikayeni yarat
+          {t.landing.tagline.split("\n").map((line, i) => (
+            <span key={i}>{line}{i === 0 && <br />}</span>
+          ))}
         </motion.p>
       </motion.div>
 
@@ -137,7 +126,7 @@ export default function LandingPage() {
               className="w-full flex items-center justify-center"
               style={{ height: "44vmax", maxHeight: 300 }}
             >
-              {SLIDES[current].illustration}
+              {SLIDE_ILLUSTRATIONS[current]}
             </motion.div>
 
             {/* Text */}
@@ -151,10 +140,10 @@ export default function LandingPage() {
                 className="text-[30px] font-bold text-white/95 leading-tight"
                 style={{ letterSpacing: "-0.02em" }}
               >
-                {SLIDES[current].title}
+                {t.landing.slides[current].title}
               </h2>
               <p className="text-[15px] text-white/45 mt-1.5">
-                {SLIDES[current].sub}
+                {t.landing.slides[current].sub}
               </p>
             </motion.div>
           </motion.div>
@@ -170,7 +159,7 @@ export default function LandingPage() {
       >
         {/* Dot indicators */}
         <div className="flex gap-2 items-center">
-          {SLIDES.map((_, i) => (
+          {SLIDE_ILLUSTRATIONS.map((_, i) => (
             <motion.button
               key={i}
               onClick={() => goTo(i)}
@@ -203,7 +192,7 @@ export default function LandingPage() {
                 boxShadow: "0 0 32px rgba(255,55,95,0.35)",
               }}
             >
-              Hikayemi Yarat
+              {t.landing.cta}
               <StarSparkSVG />
             </motion.button>
           ) : (
@@ -221,7 +210,7 @@ export default function LandingPage() {
                 border: "1px solid rgba(255,255,255,0.12)",
               }}
             >
-              Devam
+              {t.landing.next}
             </motion.button>
           )}
         </AnimatePresence>
@@ -279,7 +268,7 @@ function SlideOneIllustration() {
         style={{ position: "absolute", left: "4%", transformOrigin: "bottom center" }}
       >
         <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}>
-          <PortraitCard gender="male" color="#0A84FF" label="SEN" />
+          <PortraitCard gender="male" color="#0A84FF" label="ERKEK" />
         </motion.div>
       </motion.div>
 
@@ -291,7 +280,7 @@ function SlideOneIllustration() {
         style={{ position: "absolute", right: "4%", transformOrigin: "bottom center" }}
       >
         <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 4, delay: 0.5, repeat: Infinity, ease: "easeInOut" }}>
-          <PortraitCard gender="female" color="#FF375F" label="O" />
+          <PortraitCard gender="female" color="#FF375F" label="KADIN" />
         </motion.div>
       </motion.div>
 

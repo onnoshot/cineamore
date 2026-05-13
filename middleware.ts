@@ -21,6 +21,14 @@ export async function middleware(req: NextRequest) {
 
   // Refresh session — keep it alive on every request
   await supabase.auth.getUser();
+
+  // Auto language: Turkey → Turkish, elsewhere → English
+  if (!req.cookies.get("lang")) {
+    const country = req.headers.get("x-vercel-ip-country") ?? "TR";
+    const lang = country === "TR" ? "tr" : "en";
+    res.cookies.set("lang", lang, { maxAge: 60 * 60 * 24 * 30, path: "/" });
+  }
+
   return res;
 }
 

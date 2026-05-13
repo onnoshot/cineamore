@@ -73,20 +73,37 @@ export async function POST(req: NextRequest) {
     // Decrement user credits after successful generation (VIP users are exempt)
     if (email) {
       try {
-        const { data: reg } = await supabaseAdmin
-          .from("registrations")
+        // Check profiles first (new auth users), fall back to registrations (legacy)
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
           .select("credits, videos_created, is_vip")
           .eq("email", email)
-          .single();
+          .maybeSingle();
 
-        if (reg) {
+        if (profile) {
           await supabaseAdmin
-            .from("registrations")
+            .from("profiles")
             .update({
-              credits: reg.is_vip ? reg.credits : Math.max(0, (reg.credits ?? 1) - 1),
-              videos_created: (reg.videos_created ?? 0) + 1,
+              credits: profile.is_vip ? profile.credits : Math.max(0, (profile.credits ?? 1) - 1),
+              videos_created: (profile.videos_created ?? 0) + 1,
             })
             .eq("email", email);
+        } else {
+          const { data: reg } = await supabaseAdmin
+            .from("registrations")
+            .select("credits, videos_created, is_vip")
+            .eq("email", email)
+            .maybeSingle();
+
+          if (reg) {
+            await supabaseAdmin
+              .from("registrations")
+              .update({
+                credits: reg.is_vip ? reg.credits : Math.max(0, (reg.credits ?? 1) - 1),
+                videos_created: (reg.videos_created ?? 0) + 1,
+              })
+              .eq("email", email);
+          }
         }
       } catch { /* non-critical — video still delivered */ }
     }

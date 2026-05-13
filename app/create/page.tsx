@@ -8,11 +8,13 @@ import { Button } from "@/components/ui/button";
 import { useGenerationStore } from "@/store/generation-store";
 import { hapticMedium, hapticError } from "@/lib/utils/haptic";
 import { createClient } from "@/lib/supabase/client";
+import { useLang } from "@/lib/i18n/use-lang";
 
 export default function CreatePage() {
   const router = useRouter();
   const { setRefs, setJobId, setPhase, setCity, reset } = useGenerationStore();
   const supabase = createClient();
+  const { t } = useLang();
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
@@ -92,9 +94,9 @@ export default function CreatePage() {
           </button>
           <div>
             <h1 className="text-[22px] font-bold text-white/95" style={{ letterSpacing: "-0.01em" }}>
-              Karakterleri Seç
+              {t.create.title}
             </h1>
-            <p className="text-sm text-white/40">Net yüz fotoğrafı yükle</p>
+            <p className="text-sm text-white/40">{t.create.subtitle}</p>
           </div>
         </motion.div>
 
@@ -106,15 +108,13 @@ export default function CreatePage() {
           className="grid grid-cols-2 gap-4"
         >
           <FaceUploader
-            label="Sen"
-            sublabel="Erkek karakter"
+            label={t.create.male}
             accentColor="#0A84FF"
             preview={manPreview}
             onUpload={(blob, preview) => { setManBlob(blob); setManPreview(preview); }}
           />
           <FaceUploader
-            label="O"
-            sublabel="Kadın karakter"
+            label={t.create.female}
             accentColor="#FF375F"
             preview={womanPreview}
             onUpload={(blob, preview) => { setWomanBlob(blob); setWomanPreview(preview); }}
@@ -122,7 +122,7 @@ export default function CreatePage() {
         </motion.div>
 
         {/* Photo tips */}
-        <PhotoTips />
+        <PhotoTips label={t.create.tipsLabel} items={t.create.tips} />
 
         {/* Error */}
         {error && (
@@ -150,7 +150,7 @@ export default function CreatePage() {
             onClick={handleStart}
             className={bothReady ? "glow-pulse" : ""}
           >
-            {uploading ? "Yükleniyor…" : "Hikayeyi Başlat"}
+            {uploading ? t.create.startBtnLoading : t.create.startBtn}
           </Button>
 
           {!bothReady && (
@@ -159,9 +159,9 @@ export default function CreatePage() {
               animate={{ opacity: 1 }}
               className="flex items-center justify-center gap-4 mt-4"
             >
-              <UploadIndicator done={!!manBlob} label="Sen" />
+              <UploadIndicator done={!!manBlob} label={t.create.male} />
               <div className="w-8 h-px bg-white/10" />
-              <UploadIndicator done={!!womanBlob} label="O" />
+              <UploadIndicator done={!!womanBlob} label={t.create.female} />
             </motion.div>
           )}
         </motion.div>
@@ -170,56 +170,36 @@ export default function CreatePage() {
   );
 }
 
-const TIPS = [
-  {
-    icon: (
-      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-        <circle cx="12" cy="8" r="4" />
-        <path d="M6 20v-1a6 6 0 0 1 12 0v1" />
-        <path d="M17 3l2 2-2 2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-    color: "#FF375F",
-    title: "Ön Cephe",
-    desc: "Yüz kameraya dönük olsun",
-  },
-  {
-    icon: (
-      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="4" />
-        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" strokeLinecap="round" />
-      </svg>
-    ),
-    color: "#FF9F0A",
-    title: "İyi Işık",
-    desc: "Yüz gölgesiz, parlak olsun",
-  },
-  {
-    icon: (
-      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-        <rect x="3" y="3" width="18" height="18" rx="3" />
-        <circle cx="12" cy="10" r="3" />
-        <path d="M6 21v-1a6 6 0 0 1 12 0v1" />
-      </svg>
-    ),
-    color: "#BF5AF2",
-    title: "Tek Kişi",
-    desc: "Karede başka yüz olmasın",
-  },
-  {
-    icon: (
-      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-        <path d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12z" />
-        <path d="M12 8v4l3 3" strokeLinecap="round" />
-      </svg>
-    ),
-    color: "#30D158",
-    title: "Net Görüntü",
-    desc: "Bulanık veya filtreli olmasın",
-  },
+const TIP_ICONS = [
+  { icon: (
+    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M6 20v-1a6 6 0 0 1 12 0v1" />
+      <path d="M17 3l2 2-2 2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ), color: "#FF375F" },
+  { icon: (
+    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" strokeLinecap="round" />
+    </svg>
+  ), color: "#FF9F0A" },
+  { icon: (
+    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <circle cx="12" cy="10" r="3" />
+      <path d="M6 21v-1a6 6 0 0 1 12 0v1" />
+    </svg>
+  ), color: "#BF5AF2" },
+  { icon: (
+    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <path d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12z" />
+      <path d="M12 8v4l3 3" strokeLinecap="round" />
+    </svg>
+  ), color: "#30D158" },
 ];
 
-function PhotoTips() {
+function PhotoTips({ label, items }: { label: string; items: { title: string; desc: string }[] }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -229,10 +209,10 @@ function PhotoTips() {
     >
       <p className="text-[11px] font-semibold tracking-[0.12em] uppercase mb-2.5 px-1"
         style={{ color: "rgba(255,255,255,0.25)" }}>
-        İpuçları
+        {label}
       </p>
       <div className="grid grid-cols-2 gap-2">
-        {TIPS.map((tip, i) => (
+        {items.map((tip, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 10 }}
@@ -246,9 +226,9 @@ function PhotoTips() {
           >
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-              style={{ background: `${tip.color}18`, color: tip.color }}
+              style={{ background: `${TIP_ICONS[i].color}18`, color: TIP_ICONS[i].color }}
             >
-              {tip.icon}
+              {TIP_ICONS[i].icon}
             </div>
             <div>
               <p className="text-[13px] font-semibold text-white/80 leading-tight">{tip.title}</p>
