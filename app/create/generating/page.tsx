@@ -67,36 +67,65 @@ export default function GeneratingPage() {
 
     (async () => {
       try {
-        // Step 1: 4 scene images in parallel (using signed photo URLs as face references)
-        const imageUrls: string[] = new Array(4);
-        await Promise.all(
+        // ── Helper: poll a Higgsfield job until done ──
+        async function waitForJob(higgsfieldJobId: string, label: string): Promise<string> {
+          for (let attempt = 0; attempt < 120; attempt++) {
+            await new Promise((r) => setTimeout(r, attempt < 6 ? 5000 : 8000));
+            const pr = await fetch("/api/poll-job", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ higgsfieldJobId }),
+            });
+            const pd = await pr.json();
+            if (!pr.ok) throw new Error(pd.error ?? `${label} poll hatası`);
+            if (pd.failed) throw new Error(`${label} başarısız`);
+            if (pd.done && pd.url) return pd.url as string;
+          }
+          throw new Error(`${label} zaman aşımı`);
+        }
+
+        // Step 1: Submit 4 image jobs in parallel, then poll each until done
+        updateScene(0, { status: "generating-image" });
+        updateScene(1, { status: "generating-image" });
+        updateScene(2, { status: "generating-image" });
+        updateScene(3, { status: "generating-image" });
+
+        const imageResults = await Promise.all(
           [0, 1, 2, 3].map(async (i) => {
-            updateScene(i, { status: "generating-image" });
             const res = await fetch("/api/generate-image", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ jobId, sceneIndex: i, manUrl: manRef, womanUrl: womanRef, city }),
+              body: JSON.stringify({ sceneIndex: i, manUrl: manRef, womanUrl: womanRef, city }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error ?? `Sahne ${i + 1} görsel hatası`);
-            imageUrls[i] = data.imageUrl;
-            updateScene(i, { status: "generating-video", imageUrl: data.imageUrl });
+
+            // If direct URL returned (sync), use it. Otherwise poll.
+            const imageUrl: string = data.imageUrl
+              ?? await waitForJob(data.higgsfieldJobId, `Sahne ${i + 1} görsel`);
+
+            updateScene(i, { status: "generating-video", imageUrl });
+            return imageUrl;
           })
         );
 
-        // Step 2: 4 videos in parallel
+        // Step 2: Submit 4 video jobs in parallel, then poll each until done
         const videoUrls: string[] = new Array(4);
         await Promise.all(
-          imageUrls.map(async (imageUrl, i) => {
+          imageResults.map(async (imageUrl, i) => {
             const res = await fetch("/api/generate-video", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ jobId, sceneIndex: i, imageUrl, city }),
+              body: JSON.stringify({ sceneIndex: i, imageUrl, city }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error ?? `Sahne ${i + 1} video hatası`);
-            videoUrls[i] = data.videoUrl;
-            updateScene(i, { status: "done", videoUrl: data.videoUrl });
+
+            const videoUrl: string = data.videoUrl
+              ?? await waitForJob(data.higgsfieldJobId, `Sahne ${i + 1} video`);
+
+            videoUrls[i] = videoUrl;
+            updateScene(i, { status: "done", videoUrl });
           })
         );
 

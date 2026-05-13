@@ -156,41 +156,40 @@ export async function generateCharacterPortrait(
 }
 
 /**
- * Generate a scene image using image_auto with two soul_2 portrait job IDs.
- * Job IDs (not CDN URLs) must be used — Higgsfield CDN returns binary/octet-stream
- * which the API rejects when used as reference inputs.
+ * Submit a scene image job (non-blocking).
+ * Returns the Higgsfield job ID or a direct URL if the model responded synchronously.
  */
-export async function generateSceneImageViaHiggsfield(
+export async function submitSceneImageJob(
   scenePrompt: string,
-  manPortraitJobId: string,
-  womanPortraitJobId: string
-): Promise<string> {
+  manUrl: string,
+  womanUrl: string
+): Promise<{ jobId?: string; directUrl?: string }> {
   const result = await callMcpTool("generate_image", {
     params: {
       model: "image_auto",
       prompt: scenePrompt,
       aspect_ratio: "9:16",
       medias: [
-        { role: "image", value: manPortraitJobId },
-        { role: "image", value: womanPortraitJobId },
+        { role: "image", value: manUrl },
+        { role: "image", value: womanUrl },
       ],
     },
   });
 
-  // If URL is returned directly (sync model), use it
   const directUrl = extractMediaUrl(result);
-  if (directUrl) return directUrl;
+  if (directUrl) return { directUrl };
 
-  // Otherwise poll by job ID
-  const jobId = extractJobId(result);
-  return waitForOutput(jobId);
+  return { jobId: extractJobId(result) };
 }
 
-/** Generate a 4-second scene video using seedance_2_0 from a still image */
-export async function generateSceneVideoViaHiggsfield(
+/**
+ * Submit a scene video job (non-blocking).
+ * Returns the Higgsfield job ID or a direct URL if the model responded synchronously.
+ */
+export async function submitSceneVideoJob(
   imageUrl: string,
   motionPrompt: string
-): Promise<string> {
+): Promise<{ jobId?: string; directUrl?: string }> {
   const result = await callMcpTool("generate_video", {
     params: {
       model: "seedance_2_0",
@@ -203,8 +202,23 @@ export async function generateSceneVideoViaHiggsfield(
   });
 
   const directUrl = extractMediaUrl(result);
-  if (directUrl) return directUrl;
+  if (directUrl) return { directUrl };
 
-  const jobId = extractJobId(result);
-  return waitForOutput(jobId);
+  return { jobId: extractJobId(result) };
+}
+
+/**
+ * Poll a Higgsfield job once (non-blocking, single call).
+ * Returns { done, failed, url }.
+ */
+export async function pollHiggsfieldJobOnce(jobId: string): Promise<{
+  done: boolean;
+  failed: boolean;
+  url: string | null;
+}> {
+  const result = await callMcpTool("job_status", { jobId });
+  const url = extractMediaUrl(result);
+  if (url) return { done: true, failed: false, url };
+  const failed = /\b(fail(ed)?|error|cancelled?|rejected|invalid|timeout)\b/i.test(result);
+  return { done: false, failed, url: null };
 }
