@@ -30,18 +30,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "manUrl and womanUrl required" }, { status: 400 });
     }
 
-    // Verify proxy images are accessible before calling Higgsfield
-    const [manCheck, womanCheck] = await Promise.all([
-      fetch(manUrl, { method: "HEAD" }).catch(() => null),
-      fetch(womanUrl, { method: "HEAD" }).catch(() => null),
-    ]);
-    if (!manCheck?.ok || !womanCheck?.ok) {
-      const detail = `man=${manCheck?.status ?? "ERR"} woman=${womanCheck?.status ?? "ERR"}`;
-      console.error(`[generate-image] proxy images not accessible: ${detail}`);
-      return NextResponse.json({ error: `Görseller henüz hazır değil (${detail})` }, { status: 503 });
-    }
-    console.log(`[generate-image] proxy images OK for scene ${sceneIndex}`);
-
     if (DEMO_MODE) {
       await new Promise((r) => setTimeout(r, 800));
       return NextResponse.json({ imageUrl: DEMO_IMAGES[sceneIndex], sceneIndex });

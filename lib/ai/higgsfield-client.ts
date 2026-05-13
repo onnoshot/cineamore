@@ -92,12 +92,12 @@ function extractJobId(text: string): string {
 
 /** Extract first media URL (image or video) from text */
 function extractMediaUrl(text: string): string | null {
-  // First try to find URLs with known media extensions
+  // Higgsfield returns rawUrl first in the MCP text — grab any https URL with media extension
   const mediaMatch = text.match(/https:\/\/\S+?\.(mp4|webp|jpg|jpeg|png|gif|mov)(\?\S*)?/i);
   if (mediaMatch) return mediaMatch[0].replace(/[.,;)"']+$/, "");
 
-  // Fallback: any https URL that looks like a CDN/storage URL
-  const urlMatch = text.match(/https:\/\/(?:cdn|storage|assets|media|files|output)\S+/i);
+  // Fallback: CloudFront or any CDN/storage URL
+  const urlMatch = text.match(/https:\/\/(?:[a-z0-9-]+\.cloudfront\.net|cdn|storage|assets|media|files|output)\S+/i);
   if (urlMatch) return urlMatch[0].replace(/[.,;)"']+$/, "");
 
   return null;
@@ -211,7 +211,7 @@ export async function submitSceneImageJob(
 ): Promise<{ jobId?: string; directUrl?: string }> {
   const result = await callMcpTool("generate_image", {
     params: {
-      model: "image_auto",
+      model: "cinematic_studio_2_5",
       prompt: scenePrompt,
       aspect_ratio: "9:16",
       medias: [
@@ -237,11 +237,12 @@ export async function submitSceneVideoJob(
 ): Promise<{ jobId?: string; directUrl?: string }> {
   const result = await callMcpTool("generate_video", {
     params: {
-      model: "seedance_2_0",
+      model: "cinematic_studio_video_v2",
       prompt: motionPrompt,
-      duration: 4,
+      duration: 5,
       aspect_ratio: "9:16",
-      mode: "fast",
+      genre: "intimate",
+      mode: "std",
       medias: [{ role: "start_image", value: imageUrl }],
     },
   });
@@ -262,8 +263,28 @@ export async function pollHiggsfieldJobOnce(jobId: string): Promise<{
   url: string | null;
 }> {
   const result = await callMcpTool("job_status", { jobId });
+
+  // Check output URL first
   const url = extractMediaUrl(result);
   if (url) return { done: true, failed: false, url };
-  const failed = /\b(fail(ed)?|error|cancelled?|rejected|invalid|timeout)\b/i.test(result);
+
+  // Try to parse JSON status field directly
+  try {
+    const jsonMatch = result.match(/\{[\s\S]*"generation"[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]) as { generation?: { status?: string; results?: { rawUrl?: string } } };
+      const status = parsed.generation?.status;
+      if (status === "completed") {
+        const rawUrl = parsed.generation?.results?.rawUrl;
+        if (rawUrl) return { done: true, failed: false, url: rawUrl };
+      }
+      if (status === "failed" || status === "cancelled" || status === "error") {
+        return { done: false, failed: true, url: null };
+      }
+    }
+  } catch { /* non-JSON — fall through */ }
+
+  // Regex fallback for terminal failure keywords
+  const failed = /\b(fail(ed)?|cancelled?|rejected)\b/i.test(result);
   return { done: false, failed, url: null };
 }
