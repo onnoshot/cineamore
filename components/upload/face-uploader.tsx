@@ -13,9 +13,10 @@ interface FaceUploaderProps {
   onUpload: (blob: Blob, preview: string) => void;
   preview?: string;
   error?: string;
+  accentColor?: string;
 }
 
-export function FaceUploader({ label, sublabel, onUpload, preview, error }: FaceUploaderProps) {
+export function FaceUploader({ label, sublabel, onUpload, preview, error, accentColor = "rgba(255,255,255,0.7)" }: FaceUploaderProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -60,9 +61,9 @@ export function FaceUploader({ label, sublabel, onUpload, preview, error }: Face
           "flex flex-col items-center justify-center gap-3",
           "border-2 border-dashed transition-all duration-200",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30",
-          preview ? "border-transparent" : "border-white/15 hover:border-white/30",
           error ? "border-red-500/40" : ""
         )}
+        style={!preview && !error ? { borderColor: `${accentColor}55` } : undefined}
       >
         <AnimatePresence mode="wait">
           {preview ? (
@@ -100,9 +101,10 @@ export function FaceUploader({ label, sublabel, onUpload, preview, error }: Face
               <motion.div
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                className="w-16 h-16 rounded-full gradient-accent flex items-center justify-center"
+                className="w-16 h-16 rounded-full flex items-center justify-center"
+                style={{ background: `${accentColor}22`, border: `1.5px solid ${accentColor}55` }}
               >
-                <PersonIcon size={28} />
+                <PersonIcon size={28} color={accentColor} />
               </motion.div>
               <div className="text-center">
                 <p className="text-white/90 font-semibold text-[15px]">{label}</p>
@@ -173,9 +175,9 @@ function SheetOption({ icon, label, onClick }: { icon: React.ReactNode; label: s
 }
 
 /* ─── Icons ─── */
-function PersonIcon({ size }: { size: number }) {
+function PersonIcon({ size, color = "white" }: { size: number; color?: string }) {
   return (
-    <svg width={size} height={size} fill="none" stroke="white" strokeWidth="1.5" viewBox="0 0 24 24">
+    <svg width={size} height={size} fill="none" stroke={color} strokeWidth="1.5" viewBox="0 0 24 24">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
     </svg>

@@ -93,10 +93,6 @@ function AuthContent() {
             style={{ background: "linear-gradient(135deg, rgba(255,55,95,0.2), rgba(191,90,242,0.2))", border: "1px solid rgba(255,255,255,0.12)" }}>
             <LogoMark size={34} color="#FF375F" />
           </div>
-          <p className="text-[11px] font-bold tracking-[0.25em] uppercase mb-2"
-            style={{ color: "rgba(255,255,255,0.3)" }}>
-            CineAmore
-          </p>
           <h1 className="text-[28px] font-bold text-white" style={{ letterSpacing: "-0.02em", lineHeight: 1.1 }}>
             Aşk hikayeni<br />başlatmak için giriş yap
           </h1>

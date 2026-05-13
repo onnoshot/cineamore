@@ -12,7 +12,7 @@ const SLIDES = [
     id: 0,
     illustration: <SlideOneIllustration />,
     title: "İki Fotoğraf",
-    sub: "Senin ve onun yüzü — hepsi bu kadar",
+    sub: "İki yüz, sonsuz bir aşk hikayesi",
   },
   {
     id: 1,
@@ -92,14 +92,9 @@ export default function LandingPage() {
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.05, duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-          className="mb-0.5"
         >
-          <LogoMark size={28} color="#FF375F" />
+          <LogoMark size={36} color="#FF375F" />
         </motion.div>
-        <span className="text-[10px] font-bold tracking-[0.28em] uppercase"
-          style={{ color: "rgba(255,255,255,0.35)" }}>
-          CineAmore
-        </span>
         <motion.p
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -284,7 +279,7 @@ function SlideOneIllustration() {
         style={{ position: "absolute", left: "4%", transformOrigin: "bottom center" }}
       >
         <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}>
-          <PortraitCard gender="male" color="#FF375F" label="SEN" />
+          <PortraitCard gender="male" color="#0A84FF" label="SEN" />
         </motion.div>
       </motion.div>
 
@@ -296,7 +291,7 @@ function SlideOneIllustration() {
         style={{ position: "absolute", right: "4%", transformOrigin: "bottom center" }}
       >
         <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 4, delay: 0.5, repeat: Infinity, ease: "easeInOut" }}>
-          <PortraitCard gender="female" color="#BF5AF2" label="O" />
+          <PortraitCard gender="female" color="#FF375F" label="O" />
         </motion.div>
       </motion.div>
 
@@ -383,138 +378,101 @@ function PortraitCard({ gender, color, label }: { gender: "male" | "female"; col
   );
 }
 
-/* ── Male Portrait — sharp, elegant, suited ── */
+/* ── Male Portrait — Art Deco, angular, blue ── */
 function MalePortraitSVG({ color }: { color: string }) {
   return (
-    <svg viewBox="0 0 72 92" fill="none" style={{ width: "86%", maxWidth: 76 }}>
-      {/* Hair — layered, styled with side part */}
-      <path d="M18 40 C17 22 21 11 36 9 C51 11 55 22 54 40" fill={`${color}2a`} stroke={color} strokeWidth="1.3" strokeLinejoin="round"/>
-      <path d="M18 40 C18 26 20 15 28 11" stroke={color} strokeWidth="0.9" strokeLinecap="round" opacity="0.45"/>
-      <path d="M36 9 C37 13 37 19 36 25" stroke={color} strokeWidth="0.8" strokeLinecap="round" opacity="0.38"/>
-      <path d="M54 40 C54 26 52 15 44 11" stroke={color} strokeWidth="0.9" strokeLinecap="round" opacity="0.45"/>
-      {/* Face */}
-      <path d="M19 40 C18 50 20 58 24 63 C28 68 33 70 36 70 C39 70 44 68 48 63 C52 58 54 50 53 40 Z"
-        fill={`${color}0e`} stroke={color} strokeWidth="1.3"/>
-      {/* Ears */}
-      <path d="M19 43 C16 45 16 51 19 53" stroke={color} strokeWidth="1.1" strokeLinecap="round" fill="none" opacity="0.45"/>
-      <path d="M53 43 C56 45 56 51 53 53" stroke={color} strokeWidth="1.1" strokeLinecap="round" fill="none" opacity="0.45"/>
-      {/* Eyebrows — strong, defined */}
-      <path d="M22 34 C25 32 29 32 32 34" stroke={color} strokeWidth="1.9" strokeLinecap="round" opacity="0.8"/>
-      <path d="M40 34 C43 32 47 32 50 34" stroke={color} strokeWidth="1.9" strokeLinecap="round" opacity="0.8"/>
-      {/* Eyes — upper lid arc + iris */}
-      <path d="M22 39 C25 36.5 30 36.5 33 39" stroke={color} strokeWidth="1.4" strokeLinecap="round"/>
-      <ellipse cx="27.5" cy="40" rx="2.8" ry="2.5" fill={color} opacity="0.82"/>
-      <circle cx="26.8" cy="39.3" r="0.8" fill="white" opacity="0.5"/>
-      <path d="M39 39 C42 36.5 47 36.5 50 39" stroke={color} strokeWidth="1.4" strokeLinecap="round"/>
-      <ellipse cx="44.5" cy="40" rx="2.8" ry="2.5" fill={color} opacity="0.82"/>
-      <circle cx="43.8" cy="39.3" r="0.8" fill="white" opacity="0.5"/>
-      {/* Lashes */}
-      <path d="M22 38 L21 36.2" stroke={color} strokeWidth="0.9" strokeLinecap="round" opacity="0.5"/>
-      <path d="M25.5 37.2 L25.2 35.3" stroke={color} strokeWidth="0.9" strokeLinecap="round" opacity="0.5"/>
-      <path d="M29.5 37 L30 35.2" stroke={color} strokeWidth="0.9" strokeLinecap="round" opacity="0.5"/>
-      <path d="M39 38 L38 36.2" stroke={color} strokeWidth="0.9" strokeLinecap="round" opacity="0.5"/>
-      <path d="M42.5 37.2 L42.2 35.3" stroke={color} strokeWidth="0.9" strokeLinecap="round" opacity="0.5"/>
-      <path d="M46.5 37 L47 35.2" stroke={color} strokeWidth="0.9" strokeLinecap="round" opacity="0.5"/>
-      {/* Nose — bridge + tip */}
-      <path d="M34 44 C33.5 47 33.5 50 35 52" stroke={color} strokeWidth="0.85" strokeLinecap="round" opacity="0.4"/>
-      <path d="M32 52 C33 54.5 39 54.5 40 52" stroke={color} strokeWidth="1.0" strokeLinecap="round" opacity="0.48"/>
-      {/* Lips — Cupid's bow + lower */}
-      <path d="M28 59 C30 57 32.5 56.5 36 58 C39.5 56.5 42 57 44 59" stroke={color} strokeWidth="1.2" strokeLinecap="round" opacity="0.72"/>
-      <path d="M28 59 C30 62.5 36 63.5 44 59" stroke={color} strokeWidth="1.3" strokeLinecap="round" fill={`${color}18`} opacity="0.65"/>
-      {/* Chin */}
-      <path d="M34.5 68 C35.5 70 36.5 70 37.5 68" stroke={color} strokeWidth="0.7" strokeLinecap="round" opacity="0.28"/>
+    <svg viewBox="0 0 68 88" fill="none" style={{ width: "88%", maxWidth: 78 }}>
+      {/* Hair — bold angular block */}
+      <path d="M14 36 C14 16 20 6 34 4 C48 6 54 16 54 36" fill={`${color}55`} />
+      <path d="M14 36 C15 22 20 10 28 7" stroke={color} strokeWidth="1.1" strokeLinecap="round" opacity="0.5"/>
+      <path d="M54 36 C53 22 48 10 40 7" stroke={color} strokeWidth="1.1" strokeLinecap="round" opacity="0.5"/>
+      <path d="M34 4 L34 18" stroke={color} strokeWidth="0.9" strokeLinecap="round" opacity="0.35"/>
+      {/* Face shape — angular jawline */}
+      <path d="M16 36 C15 48 17 57 22 63 C26 68 30 70 34 70 C38 70 42 68 46 63 C51 57 53 48 52 36 Z"
+        fill={`${color}12`} stroke={color} strokeWidth="1.4"/>
+      {/* Brow ridge — bold horizontal bars */}
+      <line x1="20" y1="31" x2="30" y2="31" stroke={color} strokeWidth="3.2" strokeLinecap="round" opacity="0.85"/>
+      <line x1="38" y1="31" x2="48" y2="31" stroke={color} strokeWidth="3.2" strokeLinecap="round" opacity="0.85"/>
+      {/* Eyes — geometric diamond */}
+      <path d="M20 37 L25 34 L30 37 L25 40 Z" fill={color} opacity="0.9"/>
+      <path d="M38 37 L43 34 L48 37 L43 40 Z" fill={color} opacity="0.9"/>
+      <circle cx="25" cy="37" r="1.2" fill="white" opacity="0.55"/>
+      <circle cx="43" cy="37" r="1.2" fill="white" opacity="0.55"/>
+      {/* Nose — architectural line */}
+      <path d="M33 43 L32 51 L34 53 L36 51 L35 43" stroke={color} strokeWidth="1.0" strokeLinejoin="round" fill="none" opacity="0.45"/>
+      {/* Lips — strong single arc */}
+      <path d="M26 59 Q34 63 42 59" stroke={color} strokeWidth="2.2" strokeLinecap="round" opacity="0.75"/>
+      <path d="M28 57 Q34 55.5 40 57" stroke={color} strokeWidth="1.0" strokeLinecap="round" opacity="0.4"/>
       {/* Neck */}
-      <path d="M29 70 L29 79 L43 79 L43 70" fill={`${color}09`} stroke={color} strokeWidth="1.1"/>
-      {/* Shirt collar points */}
-      <path d="M25 75 L32 79 L36 73 L40 79 L47 75" stroke={color} strokeWidth="1.2" strokeLinejoin="round" fill={`${color}12`}/>
-      {/* Tie — with knot detail */}
-      <path d="M33.5 73 L36 71 L38.5 73 L36 82 Z" fill={`${color}2a`} stroke={color} strokeWidth="0.9"/>
-      <path d="M33.5 73 L36 71.8 L38.5 73" stroke={color} strokeWidth="0.7" opacity="0.5"/>
-      {/* Suit jacket */}
-      <path d="M3 92 C7 74 17 73 29 73 L32 79 L36 73 L40 79 L43 73 C55 73 65 74 69 92 Z"
-        fill={`${color}15`} stroke={color} strokeWidth="1.3" strokeLinejoin="round"/>
-      {/* Left lapel */}
-      <path d="M29 73 L21 80 L26 87" stroke={color} strokeWidth="1.1" strokeLinejoin="round" fill={`${color}12`}/>
-      {/* Right lapel */}
-      <path d="M43 73 L51 80 L46 87" stroke={color} strokeWidth="1.1" strokeLinejoin="round" fill={`${color}12`}/>
-      {/* Pocket square */}
-      <path d="M45.5 79 L48 77 L49 81" stroke={color} strokeWidth="0.8" strokeLinejoin="round" opacity="0.48"/>
-      {/* Button line */}
-      <line x1="36" y1="83" x2="36" y2="92" stroke={color} strokeWidth="0.7" strokeLinecap="round" opacity="0.28" strokeDasharray="2 2.5"/>
+      <rect x="28" y="70" width="12" height="10" rx="1" fill={`${color}15`} stroke={color} strokeWidth="1.0"/>
+      {/* Collar & shirt */}
+      <path d="M24 76 L30 80 L34 73 L38 80 L44 76" stroke={color} strokeWidth="1.3" strokeLinejoin="round" fill={`${color}15`}/>
+      {/* Suit — bold geometric */}
+      <path d="M2 88 C6 70 16 70 28 70 L31 80 L34 73 L37 80 L40 70 C52 70 62 70 66 88 Z"
+        fill={`${color}20`} stroke={color} strokeWidth="1.4" strokeLinejoin="round"/>
+      {/* Lapels — bold diagonal lines */}
+      <path d="M28 70 L18 78 L24 85" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M40 70 L50 78 L44 85" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      {/* Tie — solid bold triangle */}
+      <path d="M31.5 73 L34 71 L36.5 73 L34 86 Z" fill={color} opacity="0.6"/>
     </svg>
   );
 }
 
-/* ── Female Portrait — flowing hair, elegant, graceful ── */
+/* ── Female Portrait — Art Nouveau, flowing, red ── */
 function FemalePortraitSVG({ color }: { color: string }) {
   return (
-    <svg viewBox="0 0 72 92" fill="none" style={{ width: "86%", maxWidth: 76 }}>
-      {/* Hair back layer — wide flowing */}
-      <path d="M17 36 C13 52 14 68 16 78 C19 84 23 80 24 72" fill={`${color}20`} stroke={color} strokeWidth="1.1" strokeLinecap="round"/>
-      <path d="M55 36 C59 52 58 68 56 78 C53 84 49 80 48 72" fill={`${color}20`} stroke={color} strokeWidth="1.1" strokeLinecap="round"/>
-      {/* Hair highlights */}
-      <path d="M14 48 C15 56 16 64 17 72" stroke={color} strokeWidth="0.7" strokeLinecap="round" opacity="0.3"/>
-      <path d="M58 48 C57 56 56 64 55 72" stroke={color} strokeWidth="0.7" strokeLinecap="round" opacity="0.3"/>
-      {/* Hair top — voluminous */}
-      <path d="M17 36 C16 16 21 9 36 7 C51 9 56 16 55 36" fill={`${color}2a`} stroke={color} strokeWidth="1.3" strokeLinejoin="round"/>
-      {/* Hair volume strands */}
-      <path d="M36 7 C34 11 32 18 32 26" stroke={color} strokeWidth="0.8" strokeLinecap="round" opacity="0.4"/>
-      <path d="M36 7 C38 11 40 18 40 24" stroke={color} strokeWidth="0.75" strokeLinecap="round" opacity="0.35"/>
-      <path d="M17 36 C18 24 22 14 30 10" stroke={color} strokeWidth="0.85" strokeLinecap="round" opacity="0.38"/>
-      <path d="M55 36 C54 24 50 14 42 10" stroke={color} strokeWidth="0.85" strokeLinecap="round" opacity="0.38"/>
-      {/* Face */}
-      <path d="M20 37 C19 47 20 55 24 61 C28 67 33 70 36 70 C39 70 44 67 48 61 C52 55 53 47 52 37 Z"
-        fill={`${color}0e`} stroke={color} strokeWidth="1.3"/>
-      {/* Ears */}
-      <path d="M20 40 C17 42 17 48 20 50" stroke={color} strokeWidth="1.1" strokeLinecap="round" fill="none" opacity="0.4"/>
-      <path d="M52 40 C55 42 55 48 52 50" stroke={color} strokeWidth="1.1" strokeLinecap="round" fill="none" opacity="0.4"/>
+    <svg viewBox="0 0 68 88" fill="none" style={{ width: "88%", maxWidth: 78 }}>
+      {/* Hair — sweeping Mucha-style arcs */}
+      {/* Left flowing mass */}
+      <path d="M14 34 Q8 52 10 72 Q14 80 20 74 Q22 58 22 44" fill={`${color}28`} stroke={color} strokeWidth="1.1"/>
+      {/* Right flowing mass */}
+      <path d="M54 34 Q60 52 58 72 Q54 80 48 74 Q46 58 46 44" fill={`${color}28`} stroke={color} strokeWidth="1.1"/>
+      {/* Hair highlight strands */}
+      <path d="M10 44 Q11 56 12 68" stroke={color} strokeWidth="0.7" strokeLinecap="round" opacity="0.35"/>
+      <path d="M58 44 Q57 56 56 68" stroke={color} strokeWidth="0.7" strokeLinecap="round" opacity="0.35"/>
+      {/* Hair top — voluminous crown */}
+      <path d="M14 34 C13 12 19 5 34 3 C49 5 55 12 54 34" fill={`${color}38`} stroke={color} strokeWidth="1.3"/>
+      {/* Crown wave detail */}
+      <path d="M14 28 Q20 22 26 26 Q30 20 34 24 Q38 18 42 22 Q48 18 54 26" stroke={color} strokeWidth="0.9" strokeLinecap="round" fill="none" opacity="0.45"/>
+      {/* Face — soft oval */}
+      <ellipse cx="34" cy="42" rx="18" ry="21" fill={`${color}10`} stroke={color} strokeWidth="1.3"/>
+      {/* Brows — elegant arches */}
+      <path d="M20 32 Q26 28 32 32" stroke={color} strokeWidth="1.7" strokeLinecap="round" opacity="0.78"/>
+      <path d="M36 32 Q42 28 48 32" stroke={color} strokeWidth="1.7" strokeLinecap="round" opacity="0.78"/>
+      {/* Eyes — almond with radiating lashes */}
+      <path d="M20 38 Q26 34.5 32 38 Q26 41.5 20 38 Z" fill={color} opacity="0.88"/>
+      <path d="M36 38 Q42 34.5 48 38 Q42 41.5 36 38 Z" fill={color} opacity="0.88"/>
+      <circle cx="26" cy="38" r="1.1" fill="white" opacity="0.6"/>
+      <circle cx="42" cy="38" r="1.1" fill="white" opacity="0.6"/>
+      {/* Radiating lashes — petal-like */}
+      {[[-2,0,-3,-2],[0,-0.5,0,-2.5],[2,-0.5,3,-2.5],[4,0,5,-1.5]].map(([dx1,dy1,dx2,dy2],i) => (
+        <line key={i} x1={20+dx1} y1={38+dy1} x2={20+dx2} y2={38+dy2} stroke={color} strokeWidth="1.0" strokeLinecap="round" opacity="0.62"/>
+      ))}
+      {[[-2,0,-3,-2],[0,-0.5,0,-2.5],[2,-0.5,3,-2.5],[4,0,5,-1.5]].map(([dx1,dy1,dx2,dy2],i) => (
+        <line key={i} x1={36+dx1} y1={38+dy1} x2={36+dx2} y2={38+dy2} stroke={color} strokeWidth="1.0" strokeLinecap="round" opacity="0.62"/>
+      ))}
+      {/* Nose — whisper soft */}
+      <path d="M33 45 Q33.5 48 34 49.5 Q34.5 48 35 45" stroke={color} strokeWidth="0.85" strokeLinecap="round" fill="none" opacity="0.38"/>
+      {/* Lips — full Cupid's bow */}
+      <path d="M24 55 Q28 52.5 34 54.5 Q40 52.5 44 55" stroke={color} strokeWidth="1.3" strokeLinecap="round" opacity="0.7"/>
+      <path d="M24 55 Q28 60 34 61 Q40 60 44 55" fill={`${color}25`} stroke={color} strokeWidth="1.5" strokeLinecap="round" opacity="0.75"/>
       {/* Drop earrings */}
-      <circle cx="18" cy="45" r="2.2" fill="none" stroke={color} strokeWidth="1.0" opacity="0.55"/>
-      <path d="M18 47.2 L18 52" stroke={color} strokeWidth="0.9" strokeLinecap="round" opacity="0.45"/>
-      <ellipse cx="18" cy="53.5" rx="1.5" ry="2" fill={`${color}40`} stroke={color} strokeWidth="0.8" opacity="0.55"/>
-      <circle cx="54" cy="45" r="2.2" fill="none" stroke={color} strokeWidth="1.0" opacity="0.55"/>
-      <path d="M54 47.2 L54 52" stroke={color} strokeWidth="0.9" strokeLinecap="round" opacity="0.45"/>
-      <ellipse cx="54" cy="53.5" rx="1.5" ry="2" fill={`${color}40`} stroke={color} strokeWidth="0.8" opacity="0.55"/>
-      {/* Eyebrows — arched, feminine */}
-      <path d="M23 32 C26 29.5 30 29.5 33 32" stroke={color} strokeWidth="1.4" strokeLinecap="round" opacity="0.7"/>
-      <path d="M39 32 C42 29.5 46 29.5 49 32" stroke={color} strokeWidth="1.4" strokeLinecap="round" opacity="0.7"/>
-      {/* Eyes — upper lid, iris, lashes */}
-      <path d="M23 37 C26 34.5 30 34.5 33 37" stroke={color} strokeWidth="1.4" strokeLinecap="round"/>
-      <ellipse cx="28" cy="37.8" rx="2.8" ry="2.5" fill={color} opacity="0.82"/>
-      <circle cx="27.2" cy="37.1" r="0.8" fill="white" opacity="0.5"/>
-      <path d="M39 37 C42 34.5 46 34.5 49 37" stroke={color} strokeWidth="1.4" strokeLinecap="round"/>
-      <ellipse cx="44" cy="37.8" rx="2.8" ry="2.5" fill={color} opacity="0.82"/>
-      <circle cx="43.2" cy="37.1" r="0.8" fill="white" opacity="0.5"/>
-      {/* Long lashes — feminine */}
-      <path d="M23 36.5 L22 34.5" stroke={color} strokeWidth="1.0" strokeLinecap="round" opacity="0.6"/>
-      <path d="M25.5 35.5 L25 33.4" stroke={color} strokeWidth="1.0" strokeLinecap="round" opacity="0.6"/>
-      <path d="M28.5 35 L28.3 32.8" stroke={color} strokeWidth="1.0" strokeLinecap="round" opacity="0.6"/>
-      <path d="M31.5 35.5 L32 33.5" stroke={color} strokeWidth="0.9" strokeLinecap="round" opacity="0.55"/>
-      <path d="M39 36.5 L38 34.5" stroke={color} strokeWidth="1.0" strokeLinecap="round" opacity="0.6"/>
-      <path d="M41.5 35.5 L41 33.4" stroke={color} strokeWidth="1.0" strokeLinecap="round" opacity="0.6"/>
-      <path d="M44.5 35 L44.3 32.8" stroke={color} strokeWidth="1.0" strokeLinecap="round" opacity="0.6"/>
-      <path d="M47.5 35.5 L48 33.5" stroke={color} strokeWidth="0.9" strokeLinecap="round" opacity="0.55"/>
-      {/* Nose — soft, refined */}
-      <path d="M34 42 C33.5 44.5 33.5 47.5 35 49.5" stroke={color} strokeWidth="0.8" strokeLinecap="round" opacity="0.35"/>
-      <path d="M32 49.5 C33 51.5 39 51.5 40 49.5" stroke={color} strokeWidth="0.9" strokeLinecap="round" opacity="0.42"/>
-      {/* Lips — fuller, defined */}
-      <path d="M27.5 57 C29.5 55 32 54.5 36 56 C40 54.5 42.5 55 44.5 57" stroke={color} strokeWidth="1.2" strokeLinecap="round" opacity="0.72"/>
-      <path d="M27.5 57 C29.5 61 36 62.5 44.5 57" stroke={color} strokeWidth="1.4" strokeLinecap="round" fill={`${color}20`} opacity="0.7"/>
-      {/* Lower lip highlight */}
-      <path d="M32 60.5 C34 61.8 38 61.8 40 60.5" stroke={color} strokeWidth="0.6" strokeLinecap="round" opacity="0.3"/>
-      {/* Neck */}
-      <path d="M29 70 L29 77 L43 77 L43 70" fill={`${color}09`} stroke={color} strokeWidth="1.1"/>
-      {/* Elegant neckline / dress */}
-      <path d="M3 92 C7 74 17 72 29 72 L36 80 L43 72 C55 72 65 74 69 92 Z"
-        fill={`${color}12`} stroke={color} strokeWidth="1.3" strokeLinejoin="round"/>
-      {/* Dress V-neckline detail */}
-      <path d="M29 72 L36 80 L43 72" stroke={color} strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
-      {/* Dress fabric lines (elegant drape) */}
-      <path d="M20 80 C22 84 24 88 22 92" stroke={color} strokeWidth="0.7" strokeLinecap="round" opacity="0.28"/>
-      <path d="M52 80 C50 84 48 88 50 92" stroke={color} strokeWidth="0.7" strokeLinecap="round" opacity="0.28"/>
-      {/* Necklace pendant */}
-      <path d="M29 73 Q36 76 43 73" stroke={color} strokeWidth="0.7" strokeLinecap="round" opacity="0.35" fill="none"/>
-      <circle cx="36" cy="76" r="1.2" fill={`${color}50`} stroke={color} strokeWidth="0.6" opacity="0.5"/>
+      <circle cx="16" cy="43" r="2" fill="none" stroke={color} strokeWidth="1.2" opacity="0.6"/>
+      <path d="M16 45 L16 50" stroke={color} strokeWidth="1.0" strokeLinecap="round" opacity="0.5"/>
+      <ellipse cx="16" cy="52" rx="1.8" ry="2.5" fill={`${color}45`} stroke={color} strokeWidth="0.9" opacity="0.6"/>
+      <circle cx="52" cy="43" r="2" fill="none" stroke={color} strokeWidth="1.2" opacity="0.6"/>
+      <path d="M52 45 L52 50" stroke={color} strokeWidth="1.0" strokeLinecap="round" opacity="0.5"/>
+      <ellipse cx="52" cy="52" rx="1.8" ry="2.5" fill={`${color}45`} stroke={color} strokeWidth="0.9" opacity="0.6"/>
+      {/* Neck — long, elegant */}
+      <path d="M28 63 L28 72 L40 72 L40 63" fill={`${color}08`} stroke={color} strokeWidth="1.0"/>
+      {/* Dress — flowing wide silhouette */}
+      <path d="M2 88 Q8 70 22 68 L28 72 L34 66 L40 72 L46 68 Q60 70 66 88 Z"
+        fill={`${color}18`} stroke={color} strokeWidth="1.3" strokeLinejoin="round"/>
+      <path d="M28 72 Q34 78 40 72" stroke={color} strokeWidth="1.2" fill="none"/>
+      {/* Dress fabric drape lines */}
+      <path d="M18 76 Q16 82 14 88" stroke={color} strokeWidth="0.8" strokeLinecap="round" opacity="0.32"/>
+      <path d="M50 76 Q52 82 54 88" stroke={color} strokeWidth="0.8" strokeLinecap="round" opacity="0.32"/>
     </svg>
   );
 }

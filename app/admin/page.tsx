@@ -61,7 +61,7 @@ export default function AdminPage() {
       {/* Header */}
       <div className="relative z-10 safe-top pt-4 px-5 pb-3 flex items-center justify-between flex-shrink-0">
         <div>
-          <p className="text-[11px] font-semibold tracking-[0.2em] uppercase" style={{ color: "rgba(255,255,255,0.3)" }}>CineAmore</p>
+          <LogoMark size={18} color="rgba(255,255,255,0.4)" />
           <h1 className="text-[22px] font-bold text-white" style={{ letterSpacing: "-0.01em" }}>Admin Panel</h1>
         </div>
         <button onClick={() => { sessionStorage.removeItem(SESSION_KEY); setAuthed(false); setPassword(""); }}
@@ -118,7 +118,7 @@ function LoginScreen({ password, setPassword, error, checking, onLogin }: {
             style={{ background: "linear-gradient(135deg, rgba(255,55,95,0.2), rgba(191,90,242,0.2))", border: "1px solid rgba(255,255,255,0.12)" }}>
             <LogoMark size={30} color="#FF375F" />
           </div>
-          <p className="text-[12px] font-semibold tracking-[0.22em] uppercase mb-2" style={{ color: "rgba(255,255,255,0.3)" }}>CineAmore</p>
+          <LogoMark size={28} color="#FF375F" />
           <h1 className="text-[26px] font-bold text-white" style={{ letterSpacing: "-0.02em" }}>Admin Panel</h1>
         </div>
         <div className="flex flex-col gap-3">

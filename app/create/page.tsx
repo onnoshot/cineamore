@@ -108,12 +108,14 @@ export default function CreatePage() {
           <FaceUploader
             label="Sen"
             sublabel="Erkek karakter"
+            accentColor="#0A84FF"
             preview={manPreview}
             onUpload={(blob, preview) => { setManBlob(blob); setManPreview(preview); }}
           />
           <FaceUploader
             label="O"
             sublabel="Kadın karakter"
+            accentColor="#FF375F"
             preview={womanPreview}
             onUpload={(blob, preview) => { setWomanBlob(blob); setWomanPreview(preview); }}
           />
