@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-export const maxDuration = 10;
+export const maxDuration = 30;
 
 const BUCKET = "cineamore";
 
@@ -20,22 +20,23 @@ export async function GET(
     process.env.SUPABASE_SERVICE_KEY!
   );
 
-  const { data } = supabase.storage
+  const { data, error } = await supabase.storage
     .from(BUCKET)
-    .getPublicUrl(`jobs/${jobId}/${role}.webp`);
+    .download(`jobs/${jobId}/${role}.webp`);
 
-  const res = await fetch(data.publicUrl);
-  if (!res.ok) {
+  if (error || !data) {
+    console.error(`[img-proxy] download failed jobId=${jobId} role=${role}:`, error?.message);
     return NextResponse.json({ error: "image not found" }, { status: 404 });
   }
 
-  const buffer = await res.arrayBuffer();
+  const buffer = await data.arrayBuffer();
 
   return new NextResponse(buffer, {
     status: 200,
     headers: {
       "Content-Type": "image/webp",
       "Cache-Control": "public, max-age=3600",
+      "Access-Control-Allow-Origin": "*",
     },
   });
 }
