@@ -108,7 +108,7 @@ export default function LandingPage() {
             letterSpacing: "-0.01em",
           }}
         >
-          En gelişmiş AI ile sinematik<br />aşk hikayeni yarat
+          Video AI modeli ile sinematik<br />aşk hikayeni yarat
         </motion.p>
       </motion.div>
 
