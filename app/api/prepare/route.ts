@@ -85,13 +85,8 @@ export async function POST(req: NextRequest) {
 
       if (error) throw new Error(`Upload error: ${error.message}`);
 
-      // Use signed URL (1 hour) so Higgsfield can fetch the reference image
-      // even if the bucket is not public.
-      const { data: signed, error: signErr } = await supabaseAdmin.storage
-        .from(BUCKET)
-        .createSignedUrl(path, 3600);
-      if (signErr) throw new Error(`Signed URL error: ${signErr.message}`);
-      return signed.signedUrl;
+      const { data } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
+      return data.publicUrl;
     }
 
     const [manUrl, womanUrl] = await Promise.all([
