@@ -12,7 +12,7 @@ import { useLang } from "@/lib/i18n/use-lang";
 
 export default function CreatePage() {
   const router = useRouter();
-  const { setRefs, setJobId, setPhase, setCity, reset } = useGenerationStore();
+  const { setRefs, setJobId, setPhase, setCity, setEmail, reset } = useGenerationStore();
   const supabase = createClient();
   const { t } = useLang();
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -58,20 +58,8 @@ export default function CreatePage() {
       setJobId(data.jobId);
       setRefs(data.manUrl, data.womanUrl);
       setCity(data.city ?? null);
+      setEmail(userEmail);
       setPhase("generating");
-
-      // Start server-side pipeline (fire and forget — tab can be closed)
-      fetch("/api/run-job", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jobId: data.jobId,
-          manUrl: data.manUrl,
-          womanUrl: data.womanUrl,
-          city: data.city ?? null,
-          email: userEmail,
-        }),
-      }).catch(() => {}); // errors handled server-side; client polls job-status
 
       router.push("/create/generating");
     } catch (err: unknown) {

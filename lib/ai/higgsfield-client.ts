@@ -46,30 +46,38 @@ async function callMcpTool(name: string, args: Record<string, unknown>): Promise
 
   const raw = await res.text();
 
+  function extractFromParsed(parsed: unknown): string | null {
+    const p = parsed as Record<string, unknown>;
+    if (p.error) {
+      const err = p.error as Record<string, unknown>;
+      throw new Error(String(err.message ?? JSON.stringify(p.error)));
+    }
+    const result = p.result as Record<string, unknown> | undefined;
+    if (result?.content && Array.isArray(result.content)) {
+      const text = (result.content as Array<{ type: string; text?: string }>)
+        .filter((c) => c.type === "text" && c.text)
+        .map((c) => c.text!)
+        .join("\n");
+      if (text) return text;
+    }
+    if (typeof result === "string") return result;
+    return null;
+  }
+
+  // Try plain JSON first (some endpoints return non-SSE)
+  try {
+    const json = JSON.parse(raw);
+    const text = extractFromParsed(json);
+    if (text) return text;
+  } catch { /* not plain JSON — fall through to SSE parsing */ }
+
   // Parse SSE stream: each event is "data: {...json...}"
   for (const line of raw.split("\n")) {
     if (!line.startsWith("data: ")) continue;
     let parsed: unknown;
     try { parsed = JSON.parse(line.slice(6)); } catch { continue; }
-
-    const p = parsed as Record<string, unknown>;
-
-    if (p.error) {
-      const err = p.error as Record<string, unknown>;
-      throw new Error(String(err.message ?? JSON.stringify(p.error)));
-    }
-
-    // Standard JSON-RPC result
-    const result = p.result as Record<string, unknown> | undefined;
-    if (result?.content && Array.isArray(result.content)) {
-      return (result.content as Array<{ type: string; text?: string }>)
-        .filter((c) => c.type === "text" && c.text)
-        .map((c) => c.text!)
-        .join("\n");
-    }
-
-    // Direct result with text
-    if (typeof result === "string") return result;
+    const text = extractFromParsed(parsed);
+    if (text !== null) return text;
   }
 
   throw new Error(`No usable result in MCP response:\n${raw.slice(0, 400)}`);
@@ -95,10 +103,11 @@ function extractMediaUrl(text: string): string | null {
   return null;
 }
 
-/** Poll job_status until output URL is available */
+/** Poll job_status until output URL is available.
+ * With sync:true the server already waits ~25s per call, so we use a short
+ * retry gap — total timeout ≈ 50 * (25s server + 3s gap) ≈ 23 minutes. */
 async function waitForOutput(jobId: string): Promise<string> {
   const MAX_ATTEMPTS = 50;
-  let waitMs = 8000; // start at 8s, images complete in ~15-20s
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const result = await callMcpTool("job_status", { jobId, sync: true });
@@ -112,32 +121,54 @@ async function waitForOutput(jobId: string): Promise<string> {
       throw new Error(`Higgsfield job failed: ${result.slice(0, 300)}`);
     }
 
-    // Extract poll_after_seconds if provided
-    const pollMatch = result.match(/poll_after[_\s]seconds[:\s]+(\d+)/i);
-    if (pollMatch) waitMs = parseInt(pollMatch[1]) * 1000;
-    else waitMs = Math.min(waitMs * 1.3, 25000); // increase up to 25s
-
-    console.log(`[higgsfield] job ${jobId} attempt ${attempt + 1}, waiting ${waitMs}ms`);
-    await new Promise((r) => setTimeout(r, waitMs));
+    console.log(`[higgsfield] job ${jobId} attempt ${attempt + 1} pending`);
+    // Server already waited ~25s (sync:true); just a short gap before next poll
+    await new Promise((r) => setTimeout(r, 3000));
   }
 
   throw new Error(`Higgsfield job ${jobId} timed out after ${MAX_ATTEMPTS} attempts`);
 }
 
-/** Generate a scene image using gpt_image_2 with two reference faces */
-export async function generateSceneImageViaHiggsfield(
-  scenePrompt: string,
-  manImageUrl: string,
-  womanImageUrl: string
+/**
+ * Generate a soul_2 character portrait from a face photo.
+ * Returns the Higgsfield job ID (used as reference in scene generation).
+ * soul_2 is Higgsfield's identity-preserving character model.
+ */
+export async function generateCharacterPortrait(
+  photoUrl: string,
 ): Promise<string> {
   const result = await callMcpTool("generate_image", {
     params: {
-      model: "gpt_image_2",
+      model: "soul_2",
+      prompt: "Cinematic character portrait, photorealistic, natural lighting, identity preserved, detailed facial features",
+      aspect_ratio: "9:16",
+      medias: [{ role: "image", value: photoUrl }],
+    },
+  });
+
+  const jobId = extractJobId(result);
+  await waitForOutput(jobId); // confirm completion before using as reference
+  return jobId;
+}
+
+/**
+ * Generate a scene image using image_auto with two soul_2 portrait job IDs.
+ * Job IDs (not CDN URLs) must be used — Higgsfield CDN returns binary/octet-stream
+ * which the API rejects when used as reference inputs.
+ */
+export async function generateSceneImageViaHiggsfield(
+  scenePrompt: string,
+  manPortraitJobId: string,
+  womanPortraitJobId: string
+): Promise<string> {
+  const result = await callMcpTool("generate_image", {
+    params: {
+      model: "image_auto",
       prompt: scenePrompt,
       aspect_ratio: "9:16",
       medias: [
-        { role: "image", value: manImageUrl },
-        { role: "image", value: womanImageUrl },
+        { role: "image", value: manPortraitJobId },
+        { role: "image", value: womanPortraitJobId },
       ],
     },
   });
@@ -162,6 +193,7 @@ export async function generateSceneVideoViaHiggsfield(
       prompt: motionPrompt,
       duration: 4,
       aspect_ratio: "9:16",
+      mode: "fast",
       medias: [{ role: "start_image", value: imageUrl }],
     },
   });

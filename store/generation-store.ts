@@ -14,6 +14,7 @@ export interface GenerationState {
   jobId: string | null;
   manRef: string | null;
   womanRef: string | null;
+  email: string | null;
   manName: string;
   womanName: string;
   city: string | null;
@@ -24,6 +25,7 @@ export interface GenerationState {
 
   // Actions
   setRefs: (manRef: string, womanRef: string) => void;
+  setEmail: (email: string | null) => void;
   setNames: (manName: string, womanName: string) => void;
   setJobId: (id: string) => void;
   setCity: (city: string | null) => void;
@@ -47,6 +49,7 @@ export const useGenerationStore = create<GenerationState>()(
       jobId: null,
       manRef: null,
       womanRef: null,
+      email: null,
       manName: "Sen",
       womanName: "O",
       city: null,
@@ -56,6 +59,7 @@ export const useGenerationStore = create<GenerationState>()(
       overallError: null,
 
       setRefs: (manRef, womanRef) => set({ manRef, womanRef }),
+      setEmail: (email) => set({ email }),
       setNames: (manName, womanName) => set({ manName, womanName }),
       setJobId: (jobId) => set({ jobId }),
       setCity: (city) => set({ city }),
@@ -73,6 +77,7 @@ export const useGenerationStore = create<GenerationState>()(
           jobId: null,
           manRef: null,
           womanRef: null,
+          email: null,
           manName: "Sen",
           womanName: "O",
           city: null,

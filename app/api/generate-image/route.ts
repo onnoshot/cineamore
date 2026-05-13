@@ -50,6 +50,8 @@ export async function POST(req: NextRequest) {
 
     const { generateSceneImageViaHiggsfield } = await import("@/lib/ai/higgsfield-client");
 
+    // manUrl/womanUrl are Higgsfield portrait job IDs when soul_2 pre-gen is used,
+    // or Supabase public URLs as fallback
     const imageUrl = await withRetry(() =>
       generateSceneImageViaHiggsfield(scene.imagePrompt, manUrl, womanUrl)
     );
