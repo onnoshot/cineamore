@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { SCENES } from "@/lib/ai/prompts";
+import { getScenesForCity } from "@/lib/ai/prompts";
 
 const DEMO_MODE = process.env.DEMO_MODE === "true";
 const BUCKET = "cineamore";
@@ -32,7 +32,7 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
 
 export async function POST(req: NextRequest) {
   try {
-    const { jobId, sceneIndex, manUrl, womanUrl } = await req.json();
+    const { jobId, sceneIndex, manUrl, womanUrl, city } = await req.json();
 
     if (sceneIndex < 0 || sceneIndex > 3) {
       return NextResponse.json({ error: "Invalid sceneIndex" }, { status: 400 });
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ imageUrl: DEMO_IMAGES[sceneIndex], sceneIndex });
     }
 
-    const scene = SCENES[sceneIndex as 0 | 1 | 2 | 3];
+    const scene = getScenesForCity(city)[sceneIndex as 0 | 1 | 2 | 3];
 
     const { generateSceneImageViaHiggsfield } = await import("@/lib/ai/higgsfield-client");
 

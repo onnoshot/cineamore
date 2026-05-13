@@ -16,6 +16,7 @@ export interface GenerationState {
   womanRef: string | null;
   manName: string;
   womanName: string;
+  city: string | null;
   scenes: [SceneState, SceneState, SceneState, SceneState];
   finalVideoUrl: string | null;
   phase: "idle" | "uploading" | "generating" | "finalizing" | "done" | "error";
@@ -25,6 +26,7 @@ export interface GenerationState {
   setRefs: (manRef: string, womanRef: string) => void;
   setNames: (manName: string, womanName: string) => void;
   setJobId: (id: string) => void;
+  setCity: (city: string | null) => void;
   setPhase: (phase: GenerationState["phase"]) => void;
   updateScene: (index: number, update: Partial<SceneState>) => void;
   setFinalVideoUrl: (url: string) => void;
@@ -47,6 +49,7 @@ export const useGenerationStore = create<GenerationState>()(
       womanRef: null,
       manName: "Sen",
       womanName: "O",
+      city: null,
       scenes: defaultScenes,
       finalVideoUrl: null,
       phase: "idle",
@@ -55,6 +58,7 @@ export const useGenerationStore = create<GenerationState>()(
       setRefs: (manRef, womanRef) => set({ manRef, womanRef }),
       setNames: (manName, womanName) => set({ manName, womanName }),
       setJobId: (jobId) => set({ jobId }),
+      setCity: (city) => set({ city }),
       setPhase: (phase) => set({ phase }),
       updateScene: (index, update) =>
         set((state) => {
@@ -71,6 +75,7 @@ export const useGenerationStore = create<GenerationState>()(
           womanRef: null,
           manName: "Sen",
           womanName: "O",
+          city: null,
           scenes: defaultScenes,
           finalVideoUrl: null,
           phase: "idle",

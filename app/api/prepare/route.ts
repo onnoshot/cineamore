@@ -51,6 +51,26 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Fetch user city for scene personalization
+    let userCity: string | null = null;
+    if (email) {
+      const { data: profileCity } = await supabaseAdmin
+        .from("profiles")
+        .select("city")
+        .eq("email", email)
+        .maybeSingle();
+      if (profileCity?.city) {
+        userCity = profileCity.city;
+      } else {
+        const { data: regCity } = await supabaseAdmin
+          .from("registrations")
+          .select("city")
+          .eq("email", email)
+          .maybeSingle();
+        userCity = regCity?.city ?? null;
+      }
+    }
+
     async function processImage(file: File, role: string): Promise<string> {
       const bytes = await file.arrayBuffer();
       const resized = await sharp(Buffer.from(bytes))
@@ -77,7 +97,7 @@ export async function POST(req: NextRequest) {
     // Schedule cleanup after 1h (via database trigger or edge function in production)
     // For now we store jobId for reference
 
-    return NextResponse.json({ jobId, manUrl, womanUrl });
+    return NextResponse.json({ jobId, manUrl, womanUrl, city: userCity });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     console.error("[prepare]", msg);

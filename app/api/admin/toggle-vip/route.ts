@@ -23,11 +23,21 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 });
 
   const supabase = getAdmin();
-  const { error } = await supabase
+
+  // Try profiles first (new auth users), then registrations (legacy)
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({ is_vip: isVip })
+    .eq("id", userId);
+
+  const { error: regError } = await supabase
     .from("registrations")
     .update({ is_vip: isVip })
     .eq("id", userId);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // At least one table must succeed (user exists in one of them)
+  if (profileError && regError) {
+    return NextResponse.json({ error: profileError.message }, { status: 500 });
+  }
   return NextResponse.json({ ok: true, isVip });
 }

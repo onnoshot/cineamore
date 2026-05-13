@@ -12,7 +12,7 @@ export function ProgressOrchestrator() {
   const started = useRef(false);
 
   const runPipeline = useCallback(async () => {
-    const { jobId, manRef, womanRef, updateScene, setFinalVideoUrl, setOverallError } = store;
+    const { jobId, manRef, womanRef, city, updateScene, setFinalVideoUrl, setOverallError } = store;
     if (!jobId || !manRef || !womanRef) return;
 
     try {
@@ -21,7 +21,7 @@ export function ProgressOrchestrator() {
         fetch("/api/generate-image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ jobId, sceneIndex: i, manUrl: manRef, womanUrl: womanRef }),
+          body: JSON.stringify({ jobId, sceneIndex: i, manUrl: manRef, womanUrl: womanRef, city }),
         }).then(async (res) => {
           const data = await res.json();
           if (!res.ok) throw new Error(data.error ?? `Scene ${i} image failed`);
@@ -44,7 +44,7 @@ export function ProgressOrchestrator() {
         fetch("/api/generate-video", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ jobId, sceneIndex: i, imageUrl }),
+          body: JSON.stringify({ jobId, sceneIndex: i, imageUrl, city }),
         }).then(async (res) => {
           const data = await res.json();
           if (!res.ok) throw new Error(data.error ?? `Scene ${i} video failed`);

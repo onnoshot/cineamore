@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function CreatePage() {
   const router = useRouter();
-  const { setRefs, setJobId, setPhase, reset } = useGenerationStore();
+  const { setRefs, setJobId, setPhase, setCity, reset } = useGenerationStore();
   const supabase = createClient();
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
@@ -55,6 +55,7 @@ export default function CreatePage() {
 
       setJobId(data.jobId);
       setRefs(data.manUrl, data.womanUrl);
+      setCity(data.city ?? null);
       setPhase("generating");
       router.push("/create/generating");
     } catch (err: unknown) {
