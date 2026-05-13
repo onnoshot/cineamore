@@ -15,8 +15,8 @@ function getToken(): string {
 /** POST to MCP and parse SSE response → returns tool result text */
 async function callMcpTool(name: string, args: Record<string, unknown>): Promise<string> {
   const controller = new AbortController();
-  // 90s timeout: Higgsfield image gen takes ~15-30s; polling is handled separately
-  const timeoutId = setTimeout(() => controller.abort(), 90_000);
+  // 22s timeout — Vercel functions have 30s max; leave 8s buffer for the caller
+  const timeoutId = setTimeout(() => controller.abort(), 22_000);
 
   let res: Response;
   try {

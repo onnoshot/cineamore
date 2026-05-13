@@ -58,9 +58,20 @@ export default function GeneratingPage() {
   const startTimeRef = useRef<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const pipelineRef = useRef(false);
+  // Wait for Zustand persist to hydrate from localStorage before acting on state
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    if (useGenerationStore.persist.hasHydrated()) {
+      setHydrated(true);
+    } else {
+      const unsub = useGenerationStore.persist.onFinishHydration(() => setHydrated(true));
+      return unsub;
+    }
+  }, []);
 
   /* ── Pipeline ── */
   useEffect(() => {
+    if (!hydrated) return;
     if (!jobId || !manRef || !womanRef) return;
     if (phase !== "generating") return;
     if (pipelineRef.current) return;
@@ -132,7 +143,7 @@ export default function GeneratingPage() {
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId, manRef, womanRef, phase]);
+  }, [hydrated, jobId, manRef, womanRef, phase]);
 
   /* ── Timer ── */
   useEffect(() => {
@@ -158,7 +169,11 @@ export default function GeneratingPage() {
     if (phase === "done" && finalVideoUrl && jobId) router.replace(`/create/${jobId}`);
   }, [phase, finalVideoUrl, jobId, router]);
 
-  useEffect(() => { if (phase === "idle") router.replace("/create"); }, [phase, router]);
+  // Only redirect to /create after store has hydrated — avoids race condition where
+  // default "idle" phase triggers redirect before persisted "generating" state loads
+  useEffect(() => {
+    if (hydrated && phase === "idle") router.replace("/create");
+  }, [hydrated, phase, router]);
 
   if (overallError) {
     return (
