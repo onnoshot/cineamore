@@ -13,11 +13,21 @@ const DEMO_IMAGES = [
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
+  const t0 = Date.now();
   try {
-    const { sceneIndex, manUrl, womanUrl, city } = await req.json();
+    const body = await req.json();
+    const { sceneIndex, manUrl, womanUrl, city } = body as {
+      sceneIndex: number; manUrl: string; womanUrl: string; city: string | null;
+    };
+
+    console.log(`[generate-image] scene=${sceneIndex} manUrl=${manUrl?.slice(0, 60)} city=${city}`);
 
     if (sceneIndex < 0 || sceneIndex > 3) {
       return NextResponse.json({ error: "Invalid sceneIndex" }, { status: 400 });
+    }
+
+    if (!manUrl || !womanUrl) {
+      return NextResponse.json({ error: "manUrl and womanUrl required" }, { status: 400 });
     }
 
     if (DEMO_MODE) {
@@ -26,12 +36,15 @@ export async function POST(req: NextRequest) {
     }
 
     const scene = getScenesForCity(city)[sceneIndex as 0 | 1 | 2 | 3];
+    console.log(`[generate-image] calling Higgsfield for scene ${sceneIndex}…`);
+
     const { submitSceneImageJob } = await import("@/lib/ai/higgsfield-client");
 
-    // Submit job and return immediately — client will poll for completion
     const { jobId: higgsfieldJobId, directUrl } = await submitSceneImageJob(
       scene.imagePrompt, manUrl, womanUrl
     );
+
+    console.log(`[generate-image] scene=${sceneIndex} done in ${Date.now()-t0}ms jobId=${higgsfieldJobId} directUrl=${!!directUrl}`);
 
     if (directUrl) {
       return NextResponse.json({ imageUrl: directUrl, sceneIndex });
@@ -40,7 +53,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ higgsfieldJobId, sceneIndex });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Unknown error";
-    console.error("[generate-image]", msg);
+    console.error(`[generate-image] FAILED in ${Date.now()-t0}ms:`, msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

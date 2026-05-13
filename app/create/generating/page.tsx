@@ -58,15 +58,12 @@ export default function GeneratingPage() {
   const startTimeRef = useRef<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const pipelineRef = useRef(false);
-  // Wait for Zustand persist to hydrate from localStorage before acting on state
+  // Wait for Zustand persist to hydrate from localStorage before acting on state.
+  // Using a short timeout is more reliable than hasHydrated() across SSR/hydration cycles.
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
-    if (useGenerationStore.persist.hasHydrated()) {
-      setHydrated(true);
-    } else {
-      const unsub = useGenerationStore.persist.onFinishHydration(() => setHydrated(true));
-      return unsub;
-    }
+    const t = setTimeout(() => setHydrated(true), 150);
+    return () => clearTimeout(t);
   }, []);
 
   /* ── Pipeline ── */
@@ -88,12 +85,15 @@ export default function GeneratingPage() {
               method: "POST", headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ higgsfieldJobId }),
             });
-            const pd = await pr.json();
-            if (!pr.ok) throw new Error(pd.error ?? `${label} poll hatası`);
+            if (!pr.ok) {
+              const pd = await pr.json().catch(() => ({})) as { error?: string };
+              throw new Error(pd.error ?? `${label} poll ${pr.status}`);
+            }
+            const pd = await pr.json() as { done?: boolean; failed?: boolean; url?: string; error?: string };
             if (pd.failed) throw new Error(`${label} başarısız`);
-            if (pd.done && pd.url) return pd.url as string;
+            if (pd.done && pd.url) return pd.url;
           }
-          throw new Error(`${label} zaman aşımı`);
+          throw new Error(`${label} zaman aşımı (120 deneme)`);
         }
 
         updateScene(0, { status: "generating-image" });
